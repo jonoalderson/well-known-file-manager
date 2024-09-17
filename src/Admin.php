@@ -262,28 +262,23 @@ class Admin {
             // Save enabled state
             $enabled_states[$filename] = isset($_POST['well_known_files_enabled'][$filename]) ? true : false;
             
-            // Save file content
-            if (isset($_POST['well_known_files'][$filename])) {
-                
-                $content = wp_unslash($_POST['well_known_files'][$filename]);
+            // Get the content.
+            $content = wp_unslash($_POST['well_known_files'][$filename]);
 
-                // Sanitize the content.
-                $content = wp_kses_post($content);
-                
-                // Always save the content, even if it's empty
-                $instance->set_content($content);
-                $updated_files[$filename] = $content;
+            // Sanitize the content.
+            $content = wp_kses_post($content);
+            
+            // Always save the content, even if it's empty
+            $instance->set_content($content);
+            $updated_files[$filename] = $content;
 
-                // Perform validation only if the file is enabled and not empty
-                if ($enabled_states[$filename] && !empty($content)) {
-                    if (!$instance->validate()) {
-                        $validation_errors[$filename] = "Warning: Content for $filename may be invalid. Please check the format.";
-                    }
+            // Perform validation only if the file is enabled and not empty
+            if ($enabled_states[$filename] && !empty($content)) {
+                if (!$instance->validate()) {
+                    $validation_errors[$filename] = "Warning: Content for $filename may be invalid. Please check the format.";
                 }
-            } else {
-                // If the content is not set in POST, keep the existing content
-                $updated_files[$filename] = $instance->get_content();
             }
+    
         }
 
         // Update options
