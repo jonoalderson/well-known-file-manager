@@ -1,0 +1,160 @@
+<?php
+
+namespace WellKnownManager;
+
+/**
+ * Various helpers
+ */
+class Helpers {
+
+    /**
+     * Gets the Well-Known file classes.
+     *
+     * @return array The array of Well-Known file class names.
+     */
+    public static function get_well_known_file_classes() {
+
+        // Get all of our files.
+        $files = glob(Plugin::PLUGIN_FOLDER . '/classes/well-known-files/*.php');
+
+        // Define the namespace path.
+        $path = '\WellKnownManager\\WellKnownFiles\\'; 
+
+        // Prepare a container for our results
+        $well_known_classes = [];
+
+        foreach ($files as $file) {
+
+            // Get the class name from the filename.
+            $class_name = basename($file, '.php');
+
+            // Remove the 'class-' prefix.
+            $class_name = str_replace('class-', '', $class_name);
+
+            // Add the path prefix.
+            $class_name = $path . $class_name;
+
+            // Replace hyphens with underscores.
+            $class_name = str_replace('-', '_', $class_name);
+
+            // If we find the class, add it to our list.
+            if (class_exists($class_name)) {
+                $well_known_classes[] = $class_name;
+            }
+        }
+
+        return $well_known_classes;
+    }
+
+    /**
+     * Gets the Well-Known files.
+     *
+     * @return array An associative array of files, their filenames, and statuses.
+     */
+    public static function get_well_known_files() {
+        
+        // Prepare a container for our results.
+        $well_known_files = [];
+
+        // Get the saved options.
+        $saved_files = get_option('well_known_files', []);
+
+        // Iterate over all of our classes.
+        foreach (self::get_well_known_file_classes() as $class_name) {
+
+            // Get an instance of the class.
+            $instance = new $class_name();
+
+            // Remove the namespacing.
+            $class_name_array = explode('\\', get_class($instance));
+            $class_name_trimmed = end($class_name_array);
+
+            // Add it to our array.
+            $well_known_files[$class_name_trimmed] = [
+                'filename' => $instance::FILENAME,
+                'status' => isset($saved_files[$class_name_trimmed]['status']) ? $saved_files[$class_name_trimmed]['status'] : false
+            ];
+        }
+
+        return $well_known_files;
+    }
+
+    /**
+     * Get a specific file, and its properties
+     * 
+     * @param string $file The filename
+     * 
+     * @return Well_Known_File|bool The file instance, or FALSE if not found
+     */
+    public static function get_well_known_file( string $file ) {
+
+        // Clean the filename.
+        $file = basename($file);
+      
+        // Get the files.
+        $files = self::get_well_known_files();
+
+        // Convert the filename to a class name.
+        $class_name = self::convert_filename_to_class_name($file);
+
+        // Bail if the class doesn't exist.
+        if (!class_exists($class_name)) {
+            return false;
+        }
+
+        // Return the file.
+        return new $class_name();
+    }
+
+    /**
+     * Convert a filename to a class name
+     * 
+     * @param string $file The filename
+     * 
+     * @return string The class name
+     */
+    public static function convert_filename_to_class_name( string $file ) : string {
+
+        // Clean the filename.
+        $file = basename($file);
+
+        // Convert the filename to a class name.
+        $class_name = str_replace( [ '-', '.' ], '_', $file);
+        $class_name = ucwords($class_name, '_');
+
+        // Prefix the namespace.
+        $full_class_name = '\\WellKnownManager\\WellKnownFiles\\' . $class_name;
+
+        // Return the class name.
+        return $full_class_name;
+    }
+
+    /**
+     * Check if a physical file exists in the .well-known directory.
+     *
+     * @param string $filename The filename to check.
+     * @return bool True if the file exists, false otherwise.
+     */
+    public static function physical_file_exists(string $filename) : bool {
+        $well_known_dir = ABSPATH . '.well-known/';
+        $file_path = $well_known_dir . $filename;
+        return file_exists($file_path);
+    }
+
+    /**
+     * Get the cleaned URL path
+     * 
+     * @return string The cleaned URL path
+     */
+    public static function get_cleaned_request_path() : string {
+
+        // Get the request URI.
+        $url = isset($_SERVER['REQUEST_URI']) ? sanitize_url(wp_unslash($_SERVER['REQUEST_URI'])) : '';
+
+        // Get the path.
+        $path = wp_parse_url($url, PHP_URL_PATH);
+
+        return $path;
+    }
+
+}

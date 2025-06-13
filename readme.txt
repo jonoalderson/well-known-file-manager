@@ -1,14 +1,23 @@
-# Well-Known Manager
+=== Well-Known Manager ===
+Contributors: jonoalderson
+Tags: well-known, security, domain verification, file management
+Requires at least: 5.0
+Tested up to: 6.8
+Stable tag: 1.3
+License: GPLv2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Author: Jono Alderson
+Author URI: https://www.jonoalderson.com/
 
 Manage all your website's .well-known files in one place - from security policies to domain verification and more.
 
-# Description
+== Description ==
 
 Your website needs to communicate with various services, bots, and systems. These interactions often require specific files in your `.well-known` directory - files that help others understand your site better, verify ownership, or implement security policies.
 
 Well-Known Manager makes it easy to manage all these important files from your WordPress admin panel. No more manual file creation or FTP uploads needed!
 
-## Why Do You Need This?
+= Why Do You Need This? =
 
 * **Security**: Provide security contact information via `security.txt`
 * **App Verification**: Verify your domain for Google Play and Apple App Store
@@ -18,15 +27,15 @@ Well-Known Manager makes it easy to manage all these important files from your W
 * **Privacy Policies**: Share your Do Not Track policy
 * **And More**: Support for many other standard .well-known files
 
-## Key Features
+= Key Features =
 
-* 🛠️ **Easy Management**: Enable, disable, and edit files directly from WordPress
-* 🔄 **Automatic Serving**: Files are served at the correct URLs automatically
-* 📱 **Mobile-Friendly**: Clean, responsive admin interface
-* ⚡ **Performance**: Intelligent caching with automatic purging
-* 🔍 **Priority Files**: Special highlighting for important files like security.txt
+* Easy Management: Enable, disable, and edit files directly from WordPress
+* Automatic Serving: Files are served at the correct URLs automatically
+* Mobile-Friendly: Clean, responsive admin interface
+* Performance: Intelligent caching with automatic purging
+* Priority Files: Special highlighting for important files like security.txt
 
-## Supported Files
+= Supported Files =
 
 The plugin supports a wide range of .well-known files, including:
 
@@ -39,13 +48,13 @@ The plugin supports a wide range of .well-known files, including:
 * `openid-configuration` - OpenID Connect configuration
 * And many more...
 
-# Installation
+== Installation ==
 
 1. Upload the `well-known-manager` folder to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Go to Settings > Well-Known Manager to configure your files
 
-# Usage
+== Usage ==
 
 1. Navigate to Settings > Well-Known Manager
 2. Enable the files you need by toggling their switches
@@ -54,24 +63,29 @@ The plugin supports a wide range of .well-known files, including:
 
 Your .well-known files will be automatically served at their respective URLs (e.g., `https://yoursite.com/.well-known/security.txt`).
 
-# Frequently Asked Questions
+== Frequently Asked Questions ==
 
-## Can I add custom .well-known files?
+= Can I add custom .well-known files? =
 
 Currently, the plugin supports a predefined set of .well-known files. Custom file support may be added in future versions.
 
-## How does caching work?
+= How does caching work? =
 
 The plugin implements intelligent caching for optimal performance. The cache is automatically cleared when you update file content or plugin options, ensuring your files are always served with the latest content.
 
-## Is this plugin compatible with my hosting environment?
+= Is this plugin compatible with my hosting environment? =
 
 The plugin works with any standard WordPress hosting environment. However, some hosts may have restrictions on serving files from non-standard locations. If you encounter issues, please check your hosting provider's documentation.
 
-## What happens to my .well-known files when I deactivate the plugin?
+= What happens to my .well-known files when I deactivate the plugin? =
 
 When deactivated, the .well-known files will no longer be served, but your settings and file contents are preserved. Reactivating the plugin will restore your configuration.
 
-## Can I use this plugin with a caching plugin?
+= Can I use this plugin with a caching plugin? =
 
 Yes! The plugin is designed to work with WordPress caching plugins. It automatically purges its own cache when files are updated and is compatible with most popular caching solutions.
+
+== Development ==
+
+* [GitHub Repository](https://github.com/jonoalderson/well-known-manager)
+* [Report Issues](https://github.com/jonoalderson/well-known-manager) 

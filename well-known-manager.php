@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Well-Known Manager
  * Description: Manage files in the .well-known folder.
- * Version: 1.1
+ * Version: 1.3
  * Author: Jono Alderson
  * Author URI: https://www.jonoalderson.com
  * License: GPLv2 or later
@@ -12,57 +12,108 @@
 
 namespace WellKnownManager;
 
-define('WELL_KNOWN_MANAGER_VERSION', '1.1');
-define('WELL_KNOWN_MANAGER_FILE', __FILE__);
-define('WELL_KNOWN_MANAGER_DIR', __DIR__);
+/**
+ * Class Plugin
+ *
+ * Main plugin class for the Well-Known Manager plugin.
+ */
+class Plugin {
+
+    const PLUGIN_FILENAME = __FILE__;
+    const PLUGIN_FOLDER = __DIR__; 
+    const CACHE_GROUP = 'well_known_manager';
+    
+    /**
+     * @var Admin The admin object.
+     */
+    private $admin;
+
+    /**
+     * @var Handler The handler object.
+     */
+    private $handler;
+
+    /**
+     * WellKnownManager constructor.
+     */
+    public function __construct() {
+        $this->admin = new Admin();
+        $this->handler = new Handler();
+    }
+
+    /**
+     * Initialize the plugin.
+     *
+     * @return void
+     */
+    public function init() : void {
+        $this->define_constants();
+        $this->register_hooks();
+    }
+
+    /**
+     * Define plugin constants.
+     *
+     * @return void
+     */
+    private function define_constants() : void {
+        define('WELL_KNOWN_MANAGER_VERSION', '1.3');
+        define('WELL_KNOWN_MANAGER_FILE', __FILE__);
+        define('WELL_KNOWN_MANAGER_DIR', __DIR__);
+    }
+
+    /**
+     * Register plugin hooks.
+     *
+     * @return void
+     */
+    private function register_hooks() : void {
+        register_activation_hook(WELL_KNOWN_MANAGER_FILE, [$this, 'activate']);
+        register_uninstall_hook(WELL_KNOWN_MANAGER_FILE, [$this, 'maybe_delete_options']);
+    }
+
+
+    /**
+     * Get all well-known files with their class names.
+     *
+     * @return array Array of well-known files with their class names as keys.
+     */
+    public static function get_well_known_files() : array {
+        $files = [];
+        $classes = self::get_well_known_file_classes();
+        
+        foreach ($classes as $class_name) {
+            $instance = new $class_name();
+            $filename = $instance->get_filename();
+            $files[$class_name] = $filename;
+        }
+        
+        return $files;
+    }
+
+    /**
+     * Activation routine.
+     *
+     * @return void
+     */
+    public function activate() {
+        // No default options needed anymore.
+    }
+
+    /**
+     * Deletion routine.
+     *
+     * @return void
+     */
+    public function maybe_delete_options() : void {
+        // Delete the files option.
+        delete_option('well_known_files');
+    }
+}
 
 // Include the autoloader
-require_once WELL_KNOWN_MANAGER_DIR . '/autoload.php';
+require_once __DIR__ . '/autoload.php';
 
-use WellKnownManager\WellKnownManager;
-
-function run() {
-    $plugin = new WellKnownManager();
-    $plugin->init();
-}
-
-// Activation routine
-function activate() {
-    // Set default options
-    $default_options = [
-        'well_known_cleanup_on_deletion' => '0', // Default to not clean up
-    ];
-
-    if (get_option('well_known_cleanup_on_deletion') === false) {
-        add_option('well_known_cleanup_on_deletion', $default_options['well_known_cleanup_on_deletion']);
-    }
-}
-
-// Deletion routine
-function delete_options() {
-    // Check if cleanup is enabled
-    if (get_option('well_known_cleanup_on_deletion') === '1') {
-        delete_option('well_known_files');
-        delete_option('well_known_cleanup_on_deletion');
-    }
-}
-
-// Register activation and deletion hooks
-register_activation_hook(WELL_KNOWN_MANAGER_FILE, 'WellKnownManager\activate');
-register_uninstall_hook(WELL_KNOWN_MANAGER_FILE, 'WellKnownManager\delete_options');
-
-run();
-
-
-// TODO: Implement the following improvements:
-// 1. Store validation errors with their respective files:
-//    - Modify the save_well_known_files() method in the Admin class to store validation errors
-//      alongside each file's content in the database.
-//    - Update the render_well_known_file_section() method to display these errors when rendering each file section.
-
-// 2. Expose content format as a property on each file's section:
-//    - Add a get_content_format() method to each well-known file class (e.g., RobotsFile, SecurityFile, etc.).
-//    - Update the render_well_known_file_section() method to include a data attribute with the content format.
-//    - Implement client-side validation in admin-script.js using the exposed content format.
-
-// These changes will improve error handling and enable client-side validation for a better user experience.
+// Initialize the plugin
+$plugin = new Plugin();
+$plugin->init();

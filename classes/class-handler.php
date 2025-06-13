@@ -1,0 +1,152 @@
+<?php
+
+namespace WellKnownManager;
+
+/**
+ * Class Admin
+ *
+ * Handles file serving
+ */
+class Handler {
+
+    /**
+     * @var \WP_Object_Cache $cache The cache object.
+     */
+    private $cache;
+
+    /**
+     * Admin constructor.
+     *
+     * Initializes the cache object.
+     */
+    public function __construct() {
+        $this->cache = new \WP_Object_Cache();
+        $this->register_hooks();
+    }
+
+    /**
+     * Register hooks
+     * 
+     * @return void
+     */
+    private function register_hooks() : void {
+        add_action('plugins_loaded', [$this, 'serve_files']);
+    }
+
+    /**
+     * Try to serve a response from our cache.
+     * 
+     * @param string $path The request path.
+     * 
+     * @return bool TRUE if the response was served from the cache, otherwise FALSE 
+     */
+    private function serve_from_cache( string $path ) : bool {
+            
+        // Define the cache key for the request.
+        $cache_key = 'well_known_' . md5(basename($path));
+
+        // Check if we have a cached response.
+        $cached_response = $this->cache->get($cache_key, Plugin::CACHE_GROUP);
+
+        // IF we got a cached response, just serve it.
+        if ($cached_response !== false) {
+            header('Content-Type: ' . sanitize_text_field($cached_response['content_type']));
+            header('Cache-Control: max-age=3600, public');
+            header('x-robots-tag: noindex');
+
+            // Echo the cached content.
+            echo wp_kses_post($cached_response['content']);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if we should serve files.
+     * 
+     * @return bool TRUE if we should serve files, otherwise FALSE.
+     */
+    private function should_serve_files() : bool {
+
+        $path = Helpers::get_cleaned_request_path();
+
+        // Check if the request is for a well-known file.
+        if (strpos($path, '.well-known') !== false) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Serve a file
+     * 
+     * @param Well_Known_File iAn instance of the file 
+     * 
+     * @return void
+     */
+    private function serve_file(Well_Known_File $instance) : void {
+
+        // Set the appropriate Content-Type header.
+        header('Content-Type: ' . sanitize_text_field($instance->get_content_type()));
+        header('Cache-Control: max-age=3600, public');
+        header('x-robots-tag: noindex');
+
+        // Echo the content.
+        echo wp_kses_post($instance->get_content());
+    }
+
+    /**
+     * Serves the well-known files based on the request URI.
+     *
+     * @return void
+     */
+    public function serve_files() {
+
+        // Bail if we shouldn't be serving files.
+        if (!$this->should_serve_files()) {
+            return;
+        }
+
+        // Get the requested filename.
+        $path = Helpers::get_cleaned_request_path();
+        
+        // Get an instance of the file.
+        $instance = Helpers::get_well_known_file($path);
+
+        // Bail if no matching file was found.
+        if (!$instance) {
+            return;
+        }
+
+        // Bail if the file is not enabled.
+        if ($instance->get_status() === false) {
+            return;
+        }
+
+        // Try to serve from cache first.
+        if ($this->serve_from_cache($path)) {
+            exit();
+        }
+
+        // Serve the file.
+        $this->serve_file($instance);
+
+        // Cache the response.
+        $this->cache->set(
+            'well_known_' . md5(basename($path)),
+            [
+                'content_type' => $instance->get_content_type(),
+                'content' => $instance->get_content(),
+                'status' => $file['status']
+            ],
+            Plugin::CACHE_GROUP,
+            3600 // Cache for 1 hour.
+        );
+
+        exit();
+    }
+
+}
