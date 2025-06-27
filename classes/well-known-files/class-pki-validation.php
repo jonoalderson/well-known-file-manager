@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Pki_Validation extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Pki_Validation extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Supports domain validation for SSL/TLS certificate issuance.", 'well-known-manager');
+        return __("Supports domain validation for SSL/TLS certificate issuance.", 'well-known-file-manager');
     }
 }
 ?>

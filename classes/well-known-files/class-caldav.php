@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Caldav extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Caldav extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Specifies the CalDAV (Calendaring Extensions to WebDAV) service URL.", 'well-known-manager');
+        return __("Specifies the CalDAV (Calendaring Extensions to WebDAV) service URL.", 'well-known-file-manager');
     }
 
 }

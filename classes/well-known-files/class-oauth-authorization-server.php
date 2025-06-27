@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class OAuth_Authorization_Server extends Well_Known_File {
 
@@ -22,7 +22,7 @@ class OAuth_Authorization_Server extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Specifies the OAuth 2.0 Authorization Server metadata.", 'well-known-manager');
+        return __("Specifies the OAuth 2.0 Authorization Server metadata.", 'well-known-file-manager');
     }
 }
 ?>

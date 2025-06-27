@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Void_File extends Well_Known_File {
 
@@ -33,7 +33,7 @@ class Void_File extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Provides information about the VoID specification.", 'well-known-manager');
+        return __("Provides information about the VoID specification.", 'well-known-file-manager');
     }
 
 }

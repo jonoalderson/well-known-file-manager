@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Stun_Key extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Stun_Key extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Provides STUN (Session Traversal Utilities for NAT) server information.", 'well-known-manager');
+        return __("Provides STUN (Session Traversal Utilities for NAT) server information.", 'well-known-file-manager');
     }
 }
 ?>

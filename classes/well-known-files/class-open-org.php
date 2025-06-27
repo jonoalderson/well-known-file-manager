@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Open_Org extends Well_Known_File {
 
@@ -22,7 +22,7 @@ class Open_Org extends Well_Known_File {
     }
 
     public function get_description() {
-        return __('Provides Open Organization information.', 'well-known-manager');
+        return __('Provides Open Organization information.', 'well-known-file-manager');
     }
 
 }

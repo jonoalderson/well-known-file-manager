@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Csvm extends Well_Known_File {
 
@@ -18,7 +18,7 @@ class Csvm extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Supports the CSV on the Web (CSVW) metadata standard.", 'well-known-manager');
+        return __("Supports the CSV on the Web (CSVW) metadata standard.", 'well-known-file-manager');
     }
 
 }

@@ -1,9 +1,9 @@
-=== Well-Known Manager ===
+=== Well-Known File Manager ===
 Contributors: jonoalderson
-Tags: well-known, security, domain verification, file management
+Tags: well-known, security, file management
 Requires at least: 5.0
 Tested up to: 6.8
-Stable tag: 1.3
+Stable tag: 1.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Author: Jono Alderson
@@ -15,7 +15,7 @@ Manage all your website's .well-known files in one place - from security policie
 
 Your website needs to communicate with various services, bots, and systems. These interactions often require specific files in your `.well-known` directory - files that help others understand your site better, verify ownership, or implement security policies.
 
-Well-Known Manager makes it easy to manage all these important files from your WordPress admin panel. No more manual file creation or FTP uploads needed!
+Well-Known File Manager makes it easy to manage all these important files from your WordPress admin panel. No more manual file creation or FTP uploads needed!
 
 = Why Do You Need This? =
 
@@ -89,3 +89,8 @@ Yes! The plugin is designed to work with WordPress caching plugins. It automatic
 
 * [GitHub Repository](https://github.com/jonoalderson/well-known-manager)
 * [Report Issues](https://github.com/jonoalderson/well-known-manager) 
+
+== Changelog ==
+
+- 1.4.0 ( 27/06/2025 )
+* FEATURE: Serve a lightweight 404 error on disabled files

@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Mta_Sts_Txt extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Mta_Sts_Txt extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Defines the MTA-STS (SMTP MTA Strict Transport Security) policy.", 'well-known-manager');
+        return __("Defines the MTA-STS (SMTP MTA Strict Transport Security) policy.", 'well-known-file-manager');
     }
 }
 ?>

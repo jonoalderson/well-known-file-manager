@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Gpc extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Gpc extends Well_Known_File {
     }
     
     public function get_description() {
-        return __("Indicates the website's Global Privacy Control (GPC) policy.", 'well-known-manager');
+        return __("Indicates the website's Global Privacy Control (GPC) policy.", 'well-known-file-manager');
     }
 }
 ?>

@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Dat extends Well_Known_File {
 
@@ -18,7 +18,7 @@ class Dat extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Provides information for the Dat peer-to-peer protocol.", 'well-known-manager');
+        return __("Provides information for the Dat peer-to-peer protocol.", 'well-known-file-manager');
     }
 
 }

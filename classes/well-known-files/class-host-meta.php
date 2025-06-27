@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Host_Meta extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Host_Meta extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Provides host metadata for web-based protocols.", 'well-known-manager');
+        return __("Provides host metadata for web-based protocols.", 'well-known-file-manager');
     }
 
 }

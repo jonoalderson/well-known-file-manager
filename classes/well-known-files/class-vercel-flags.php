@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Vercel_Flags extends Well_Known_File {
 
@@ -19,7 +19,7 @@ class Vercel_Flags extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Defines feature flags for Vercel deployments.", 'well-known-manager');
+        return __("Defines feature flags for Vercel deployments.", 'well-known-file-manager');
     }
 
 }

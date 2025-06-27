@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Est extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Est extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Supports Enrollment over Secure Transport (EST) for certificate enrollment.", 'well-known-manager');
+        return __("Supports Enrollment over Secure Transport (EST) for certificate enrollment.", 'well-known-file-manager');
     }
 
 }

@@ -1,13 +1,13 @@
 <?php
 
-namespace WellKnownManager;
+namespace WellKnownFileManager;
 
 /**
  * Class Admin
  *
  * Manages the admin page
  *
- * @package WellKnownManager
+ * @package WellKnownFileManager
  */
 class Admin {
 
@@ -41,10 +41,49 @@ class Admin {
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
         add_action('admin_post_save_well_known_files', [$this, 'save_well_known_files']);
-        add_action('update_option_well_known_manager_options', [$this, 'purge_cache_on_update'], 10, 3);
+        add_action('update_option_well_known_file_manager_options', [$this, 'purge_cache_on_update'], 10, 3);
         add_action('wp_ajax_toggle_well_known_file', [$this, 'ajax_toggle_well_known_file']);
-        add_action('wp_ajax_well_known_manager_save_file', [$this, 'ajax_save_well_known_file']);
-        add_action('wp_ajax_well_known_get_default_content', [$this, 'ajax_get_default_content']);
+        add_action('wp_ajax_well_known_file_manager_save_file', [$this, 'ajax_save_well_known_file']);
+        add_action('wp_ajax_well_known_file_get_default_content', [$this, 'ajax_get_default_content']);
+        add_action('admin_notices', [$this, 'show_subdirectory_install_warning']);
+        add_filter('plugin_action_links_well-known-file-manager/well-known-file-manager.php', [$this, 'add_plugin_action_links']);
+    }
+
+    /**
+     * Displays a warning if the site is installed in a subdirectory.
+     * In such cases, the plugin cannot automatically handle .well-known requests
+     * and requires manual web server configuration.
+     *
+     * @return void
+     */
+    public function show_subdirectory_install_warning() {
+        // Only show on our plugin page to avoid cluttering the admin interface.
+        if (!isset($_GET['page']) || 'well-known-file-manager' !== $_GET['page']) {
+            return;
+        }
+
+        // Bail if the site is not in a subdirectory.
+        if (!Helpers::is_subdirectory_install()) {
+            return;
+        }
+
+        $home_path = wp_parse_url(get_home_url(), PHP_URL_PATH);
+        ?>
+        <div class="notice notice-error">
+            <h2><?php esc_html_e('Well-Known File Manager: Action Required', 'well-known-file-manager'); ?></h2>
+            <p>
+                <?php
+                echo wp_kses_post(
+                    sprintf(
+                        // translators: %s is the subdirectory path, e.g., /blog.
+                        __('Your website\'s home URL is set to a subdirectory (<strong>%s</strong>). Because of this, your web server will not automatically send requests for <code>/.well-known/</code> files to WordPress, and this plugin cannot manage them.', 'well-known-file-manager'),
+                        esc_html($home_path)
+                    )
+                );
+                ?>
+            </p>
+        </div>
+        <?php
     }
 
     /**
@@ -56,12 +95,12 @@ class Admin {
      */
     public function enqueue_admin_assets($hook) {
         // Bail if we're not on the plugin admin page.
-        if ('settings_page_well-known-manager' !== $hook) {
+        if ('settings_page_well-known-file-manager' !== $hook) {
             return;
         }
 
         // Get the version based on environment.
-        $version = WELL_KNOWN_MANAGER_VERSION;
+        $version = WELL_KNOWN_FILE_MANAGER_VERSION;
         if ('production' !== wp_get_environment_type()) {
             $css_file = Plugin::PLUGIN_FOLDER . '/styles/build/admin.min.css';
             $js_file = Plugin::PLUGIN_FOLDER . '/js/build/admin.min.js';
@@ -72,31 +111,31 @@ class Admin {
             $version = max($css_mtime, $js_mtime);
         }
 
-        wp_enqueue_style('well-known-manager-admin-styles', plugin_dir_url(__FILE__) . '../styles/build/admin.min.css', [], $version);
-        wp_enqueue_script('well-known-manager-admin-script', plugin_dir_url(__FILE__) . '../js/build/admin.min.js', [], $version, true);
+        wp_enqueue_style('well-known-file-manager-admin-styles', plugin_dir_url(__FILE__) . '../styles/build/admin.min.css', [], $version);
+        wp_enqueue_script('well-known-file-manager-admin-script', plugin_dir_url(__FILE__) . '../js/build/admin.min.js', [], $version, true);
 
         // Localize the script with the nonce and other data.
-        wp_localize_script('well-known-manager-admin-script', 'wellKnownManager', [
-            'nonce' => wp_create_nonce('well_known_manager_nonce'),
+        wp_localize_script('well-known-file-manager-admin-script', 'WellKnownFileManager', [
+            'nonce' => wp_create_nonce('well_known_file_manager_nonce'),
             'ajaxurl' => admin_url('admin-ajax.php'),
             'i18n' => [
-                'saving' => __('Saving...', 'well-known-manager'),
-                'error' => __('Error saving file state.', 'well-known-manager')
+                'saving' => __('Saving...', 'well-known-file-manager'),
+                'error' => __('Error saving file state.', 'well-known-file-manager')
             ]
         ]);
     }
 
     /**
-     * Adds the Well-Known Manager options page to the admin menu.
+     * Adds the Well-Known File Manager options page to the admin menu.
      *
      * @return void
      */
     public function add_admin_menu() {
         add_options_page(
-            __('Well-Known Manager', 'well-known-manager'),
-            __('Well-Known Manager', 'well-known-manager'),
+            __('Well-Known File Manager', 'well-known-file-manager'),
+            __('Well-Known File Manager', 'well-known-file-manager'),
             'manage_options',
-            'well-known-manager',
+            'well-known-file-manager',
             [$this, 'render_admin_page']
         );
     }
@@ -127,12 +166,12 @@ class Admin {
     }
 
     /**
-     * Sanitize the well-known manager options.
+     * Sanitize the well-known file manager options.
      *
      * @param array $input The input array to sanitize.
      * @return array The sanitized array.
      */
-    public function sanitize_well_known_manager_options($input) {
+    public function sanitize_well_known_file_manager_options($input) {
         if (!is_array($input)) {
             return [];
         }
@@ -161,9 +200,9 @@ class Admin {
         );
         register_setting(
             'well_known_files_group',
-            'well_known_manager_options',
+            'well_known_file_manager_options',
             [
-                'sanitize_callback' => [$this, 'sanitize_well_known_manager_options'],
+                'sanitize_callback' => [$this, 'sanitize_well_known_file_manager_options'],
                 'default' => []
             ]
         );
@@ -207,15 +246,15 @@ class Admin {
     public function render_admin_page() {
         // Bail if the user doesn't have the necessary permissions.
         if (!current_user_can('manage_options')) {
-            wp_die(esc_html__('You do not have sufficient permissions to access this page.', 'well-known-manager'));
+            wp_die(esc_html__('You do not have sufficient permissions to access this page.', 'well-known-file-manager'));
         }
 
         // Render the admin page.
-        echo '<div class="wrap well-known-manager-admin">';
-        echo '<h1>' . esc_html__('Well-Known Manager', 'well-known-manager') . '</h1>';
+        echo '<div class="wrap well-known-file-manager-admin">';
+        echo '<h1>' . esc_html__('Well-Known File Manager', 'well-known-file-manager') . '</h1>';
 
         // Add the nonce field
-        wp_nonce_field('well_known_manager_nonce', 'well_known_manager_nonce');
+        wp_nonce_field('well_known_file_manager_nonce', 'well_known_file_manager_nonce');
 
         // Render the files sections.
         $this->render_files_options();
@@ -230,7 +269,7 @@ class Admin {
      */
     private function render_files_options() : void {
         echo '<section id="well-known-files">';
-        echo '<p class="section-description">' . esc_html__('Enable and configure the .well-known files you want to use on your site. Each file serves a specific purpose and may be required by different services or applications.', 'well-known-manager') . '</p>';
+        echo '<p class="section-description">' . esc_html__('Enable and configure the .well-known files you want to use on your site. Each file serves a specific purpose and may be required by different services or applications.', 'well-known-file-manager') . '</p>';
         echo '<div class="well-known-files-grid">';
 
         // Get all file classes
@@ -309,14 +348,10 @@ class Admin {
 
         echo '<div class="' . esc_attr($card_class) . '" data-file-id="' . esc_attr($short_class_name) . '" data-content-type="' . esc_attr($instance::CONTENT_TYPE) . '">';
         echo '<div class="well-known-file-header">';
-        echo '<h3>' . esc_html($filename);
+        echo '<h3>';
+        echo '<a href="' . esc_url(home_url('/.well-known/' . $filename)) . '" class="well-known-file-link" target="_blank">' . esc_html($filename) . '</a>';
         if ($is_priority) {
             echo ' <span class="dashicons dashicons-star-filled priority-icon"></span>';
-        }
-        if ($status) {
-            echo ' <a href="' . esc_url(home_url('/.well-known/' . $filename)) . '" class="view-file" target="_blank" title="' . esc_attr__('View file', 'well-known-manager') . '">';
-            echo '<span class="dashicons dashicons-visibility"></span>';
-            echo '</a>';
         }
         echo '</h3>';
         echo '<div class="well-known-file-actions">';
@@ -325,10 +360,10 @@ class Admin {
         echo '<span class="slider round"></span>';
         echo '</label>';
         echo '<button type="button" class="button restore-default-content" data-file-id="' . esc_attr($short_class_name) . '" ' . disabled(!$status, true, false) . '>';
-        echo esc_html__('Restore Default', 'well-known-manager');
+        echo esc_html__('Restore Default', 'well-known-file-manager');
         echo '</button>';
         echo '<button type="button" class="button save-file-content" data-file-id="' . esc_attr($short_class_name) . '" ' . disabled(!$status, true, false) . '>';
-        echo esc_html__('Save', 'well-known-manager');
+        echo esc_html__('Save', 'well-known-file-manager');
         echo '</button>';
         echo '</div>';
         echo '</div>';
@@ -337,7 +372,7 @@ class Admin {
         if ($has_physical_file) {
             echo '<div class="physical-file-warning">';
             echo '<span class="dashicons dashicons-warning"></span> ';
-            echo esc_html__('A physical version of this file exists in your .well-known directory. This version will not be served.', 'well-known-manager');
+            echo esc_html__('A physical version of this file exists in your .well-known directory. This version will not be served.', 'well-known-file-manager');
             echo '</div>';
         }
 
@@ -357,18 +392,18 @@ class Admin {
         
         // Verify nonce.
         if (!isset($_POST['well_known_files_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['well_known_files_nonce'])), 'save_well_known_files')) {
-            wp_die(esc_html__('Security check failed.', 'well-known-manager'));
+            wp_die(esc_html__('Security check failed.', 'well-known-file-manager'));
         }
 
         // Check permissions.
         if (!current_user_can('manage_options')) {
-            wp_die(esc_html__('You do not have permission to perform this action.', 'well-known-manager'));
+            wp_die(esc_html__('You do not have permission to perform this action.', 'well-known-file-manager'));
         }
 
         // Get the files data.
         $files = isset($_POST['well_known_files']) ? array_map('sanitize_text_field', wp_unslash($_POST['well_known_files'])) : [];
         if (empty($files)) {
-            wp_die(esc_html__('No files data received.', 'well-known-manager'));
+            wp_die(esc_html__('No files data received.', 'well-known-file-manager'));
         }
 
         // Prepare a container for the files to save.
@@ -422,20 +457,20 @@ class Admin {
     public function ajax_toggle_well_known_file() {
         try {
             // Verify nonce
-            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'well_known_manager_nonce')) {
-                wp_send_json_error(['message' => __('Security check failed.', 'well-known-manager')]);
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'well_known_file_manager_nonce')) {
+                wp_send_json_error(['message' => __('Security check failed.', 'well-known-file-manager')]);
                 return;
             }
             // Check permissions
             if (!current_user_can('manage_options')) {
-                wp_send_json_error(['message' => __('You do not have permission to perform this action.', 'well-known-manager')]);
+                wp_send_json_error(['message' => __('You do not have permission to perform this action.', 'well-known-file-manager')]);
                 return;
             }
             
             // Get and validate file ID
             $file_id = isset($_POST['file_id']) ? sanitize_text_field(wp_unslash($_POST['file_id'])) : '';
             if (empty($file_id)) {
-                wp_send_json_error(['message' => __('No file specified.', 'well-known-manager')]);
+                wp_send_json_error(['message' => __('No file specified.', 'well-known-file-manager')]);
                 return;
             }
             
@@ -449,7 +484,7 @@ class Admin {
             $class_name = Helpers::convert_filename_to_class_name($file_id);
             
             if (!class_exists($class_name)) {
-                wp_send_json_error(['message' => __('Invalid file type.', 'well-known-manager')]);
+                wp_send_json_error(['message' => __('Invalid file type.', 'well-known-file-manager')]);
                 return;
             }
             
@@ -459,12 +494,12 @@ class Admin {
             $file->update_status($enabled);
             
             wp_send_json_success([
-                'message' => __('File saved successfully.', 'well-known-manager')
+                'message' => __('File saved successfully.', 'well-known-file-manager')
             ]);
             
         } catch (\Exception $e) {
             wp_send_json_error([
-                'message' => __('Error saving file.', 'well-known-manager')
+                'message' => __('Error saving file.', 'well-known-file-manager')
             ]);
         }
     }
@@ -477,21 +512,21 @@ class Admin {
     public function ajax_save_well_known_file() {
         try {
             // Verify nonce
-            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'well_known_manager_nonce')) {
-                wp_send_json_error(['message' => __('Security check failed.', 'well-known-manager')]);
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'well_known_file_manager_nonce')) {
+                wp_send_json_error(['message' => __('Security check failed.', 'well-known-file-manager')]);
                 return;
             }
             
             // Check permissions
             if (!current_user_can('manage_options')) {
-                wp_send_json_error(['message' => __('You do not have permission to perform this action.', 'well-known-manager')]);
+                wp_send_json_error(['message' => __('You do not have permission to perform this action.', 'well-known-file-manager')]);
                 return;
             }
             
             // Get and validate file ID
             $file_id = isset($_POST['file']) ? sanitize_text_field(wp_unslash($_POST['file'])) : '';
             if (empty($file_id)) {
-                wp_send_json_error(['message' => __('No file specified.', 'well-known-manager')]);
+                wp_send_json_error(['message' => __('No file specified.', 'well-known-file-manager')]);
                 return;
             }
             
@@ -503,7 +538,7 @@ class Admin {
             $class_name = Helpers::convert_filename_to_class_name($file_id);
             
             if (!class_exists($class_name)) {
-                wp_send_json_error(['message' => __('Invalid file type.', 'well-known-manager')]);
+                wp_send_json_error(['message' => __('Invalid file type.', 'well-known-file-manager')]);
                 return;
             }
             
@@ -516,12 +551,12 @@ class Admin {
             $this->cache->flush_group(Plugin::CACHE_GROUP);
             
             wp_send_json_success([
-                'message' => __('File saved successfully.', 'well-known-manager')
+                'message' => __('File saved successfully.', 'well-known-file-manager')
             ]);
             
         } catch (\Exception $e) {
             wp_send_json_error([
-                'message' => __('Error saving file.', 'well-known-manager')
+                'message' => __('Error saving file.', 'well-known-file-manager')
             ]);
         }
     }
@@ -533,8 +568,8 @@ class Admin {
      */
     public function ajax_get_default_content() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'well_known_manager_nonce')) {
-            wp_send_json_error(['message' => __('Invalid nonce.', 'well-known-manager')]);
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'well_known_file_manager_nonce')) {
+            wp_send_json_error(['message' => __('Invalid nonce.', 'well-known-file-manager')]);
         }
 
         // Get file ID
@@ -603,5 +638,17 @@ class Admin {
         }
         
         echo '</div>';
+    }
+
+    /**
+     * Adds plugin action links.
+     *
+     * @param array $links The existing plugin action links.
+     * @return array The modified plugin action links.
+     */
+    public function add_plugin_action_links($links) {
+        $settings_link = '<a href="' . admin_url('options-general.php?page=well-known-file-manager') . '">' . __('Settings', 'well-known-file-manager') . '</a>';
+        array_unshift($links, $settings_link);
+        return $links;
     }
 }

@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Nodeinfo extends Well_Known_File {
 
@@ -21,7 +21,7 @@ class Nodeinfo extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Provides metadata about the server for federated networks.", 'well-known-manager');
+        return __("Provides metadata about the server for federated networks.", 'well-known-file-manager');
     }
 }
 ?>

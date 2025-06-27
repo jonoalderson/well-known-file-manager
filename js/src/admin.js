@@ -4,11 +4,11 @@
 (function($) {
     'use strict';
 
-    const WellKnownManager = {
-        nonce: '',
+    window.WellKnownFileManager = window.WellKnownFileManager || {};
 
+    $.extend(window.WellKnownFileManager, {
         constructor() {
-            this.nonce = wellKnownManager.nonce;
+            this.nonce = window.WellKnownFileManager.nonce;
             this.bindEvents();
         },
 
@@ -139,9 +139,9 @@
                 url: ajaxurl,
                 type: 'POST',
                 data: {
-                    action: 'well_known_get_default_content',
+                    action: 'well_known_file_get_default_content',
                     file_id: fileId,
-                    nonce: this.nonce
+                    nonce: window.WellKnownFileManager.nonce
                 },
                 success: (response) => {
                     if (response.success) {
@@ -172,12 +172,15 @@
         },
 
         saveFileContent(fileId, content, enabled, responseCode) {
+
+            console.log('Sending nonce:', window.WellKnownFileManager.nonce);
+
             return $.ajax({
-                url: wellKnownManager.ajaxurl,
+                url: ajaxurl,
                 type: 'POST',
                 data: {
-                    action: 'well_known_manager_save_file',
-                    nonce: this.nonce,
+                    action: 'well_known_file_manager_save_file',
+                    nonce: window.WellKnownFileManager.nonce,
                     file: fileId,
                     content: content,
                     status: enabled,
@@ -242,10 +245,10 @@
                 notice.remove();
             }, 5000);
         }
-    };
+    });
 
     function init() {
-        WellKnownManager.constructor();
+        window.WellKnownFileManager.constructor();
     }
 
     $(document).ready(init);

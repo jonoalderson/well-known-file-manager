@@ -1,6 +1,8 @@
 <?php
 
-namespace WellKnownManager;
+namespace WellKnownFileManager;
+
+use WellKnownFileManager\Helpers;
 
 /**
  * Class Admin
@@ -116,14 +118,14 @@ class Handler {
         // Get an instance of the file.
         $instance = Helpers::get_well_known_file($path);
 
-        // Bail if no matching file was found.
+        // Serve a 404 if no matching file was found.
         if (!$instance) {
-            return;
+            Helpers::serve_404();
         }
 
-        // Bail if the file is not enabled.
+        // Serve a 404 if the file is not enabled.
         if ($instance->get_status() === false) {
-            return;
+            Helpers::serve_404();
         }
 
         // Try to serve from cache first.
@@ -148,5 +150,7 @@ class Handler {
 
         exit();
     }
+
+
 
 }

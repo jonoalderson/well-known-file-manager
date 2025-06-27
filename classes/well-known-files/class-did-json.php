@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Did_Json extends Well_Known_File {
 
@@ -16,7 +16,7 @@ class Did_Json extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Specifies the Decentralized Identifier (DID) for the domain.", 'well-known-manager');
+        return __("Specifies the Decentralized Identifier (DID) for the domain.", 'well-known-file-manager');
     }
 
 }

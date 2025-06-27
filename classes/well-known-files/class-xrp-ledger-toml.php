@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Xrp_Ledger_Toml extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Xrp_Ledger_Toml extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Provides information for XRP Ledger domain verification.", 'well-known-manager');
+        return __("Provides information for XRP Ledger domain verification.", 'well-known-file-manager');
     }
 
 }

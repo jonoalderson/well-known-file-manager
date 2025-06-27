@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Posh extends Well_Known_File {
 
@@ -22,7 +22,7 @@ class Posh extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Supports POSH (Pervasive Oblivious Secure Hosting) for XMPP.", 'well-known-manager');
+        return __("Supports POSH (Pervasive Oblivious Secure Hosting) for XMPP.", 'well-known-file-manager');
     }
 
 }

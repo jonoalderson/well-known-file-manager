@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Assetlinks_Json extends Well_Known_File {
 
@@ -21,7 +21,7 @@ class Assetlinks_Json extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Associates your Android app with your website for features like App Links.", 'well-known-manager');
+        return __("Associates your Android app with your website for features like App Links.", 'well-known-file-manager');
     }
 
 }

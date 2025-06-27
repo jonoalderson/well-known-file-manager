@@ -1,14 +1,9 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
-/**
- * Class Coap
- *
- * Manages the CoAP file for the Constrained Application Protocol.
- */
 class Coap extends Well_Known_File {
 
     const FILENAME = "coap";
@@ -19,7 +14,7 @@ class Coap extends Well_Known_File {
     }
     
     public function get_description() {
-        return __("Defines resources for the Constrained Application Protocol (CoAP).", 'well-known-manager');
+        return __("Defines resources for the Constrained Application Protocol (CoAP).", 'well-known-file-manager');
     }
     
 }

@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Security_Txt extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Security_Txt extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Provides security policy and contact information for ethical hackers and researchers.", 'well-known-manager');
+        return __("Provides security policy and contact information for ethical hackers and researchers.", 'well-known-file-manager');
     }
 
 }

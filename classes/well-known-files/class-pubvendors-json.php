@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Pubvendors_Json extends Well_Known_File {
 
@@ -24,7 +24,7 @@ class Pubvendors_Json extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Lists vendors for the Transparency and Consent Framework in digital advertising.", 'well-known-manager');
+        return __("Lists vendors for the Transparency and Consent Framework in digital advertising.", 'well-known-file-manager');
     }
 }
 ?>

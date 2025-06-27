@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Openpgpkey extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Openpgpkey extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Stores OpenPGP public keys for email addresses on the domain.", 'well-known-manager');
+        return __("Stores OpenPGP public keys for email addresses on the domain.", 'well-known-file-manager');
     }
 
 }

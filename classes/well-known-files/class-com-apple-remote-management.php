@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Com_Apple_Remote_Management extends Well_Known_File {
 
@@ -20,7 +20,7 @@ class Com_Apple_Remote_Management extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Configures Apple's remote management for iOS and macOS devices.", 'well-known-manager');
+        return __("Configures Apple's remote management for iOS and macOS devices.", 'well-known-file-manager');
     }
 
 }

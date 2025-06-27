@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Discord extends Well_Known_File {
 
@@ -18,7 +18,7 @@ class Discord extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Provides Discord-related information or configuration.", 'well-known-manager');
+        return __("Provides Discord-related information or configuration.", 'well-known-file-manager');
     }
 
 }

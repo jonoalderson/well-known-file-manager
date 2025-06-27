@@ -1,6 +1,6 @@
 <?php
 
-namespace WellKnownManager;
+namespace WellKnownFileManager;
 
 /**
  * Abstract class Well_Known_File

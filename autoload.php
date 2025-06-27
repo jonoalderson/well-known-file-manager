@@ -1,6 +1,6 @@
 <?php
 
-namespace WellKnownManager;
+namespace WellKnownFileManager;
 
 // Prevent direct file access.
 if ( ! defined( 'ABSPATH' ) ) {

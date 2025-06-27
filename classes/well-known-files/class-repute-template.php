@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Repute_Template extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Repute_Template extends Well_Known_File {
     }
     
     public function get_description() {
-        return __("Supports the Reputation Query Protocol.", 'well-known-manager');
+        return __("Supports the Reputation Query Protocol.", 'well-known-file-manager');
     }
     
 }

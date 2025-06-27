@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Time extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Time extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Provides information about the Time over HTTPS specification.", 'well-known-manager');
+        return __("Provides information about the Time over HTTPS specification.", 'well-known-file-manager');
     }
   
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace WellKnownManager;
+namespace WellKnownFileManager;
 
 /**
  * Various helpers
@@ -18,7 +18,7 @@ class Helpers {
         $files = glob(Plugin::PLUGIN_FOLDER . '/classes/well-known-files/*.php');
 
         // Define the namespace path.
-        $path = '\WellKnownManager\\WellKnownFiles\\'; 
+        $path = '\WellKnownFileManager\\WellKnownFiles\\'; 
 
         // Prepare a container for our results
         $well_known_classes = [];
@@ -123,7 +123,7 @@ class Helpers {
         $class_name = ucwords($class_name, '_');
 
         // Prefix the namespace.
-        $full_class_name = '\\WellKnownManager\\WellKnownFiles\\' . $class_name;
+        $full_class_name = '\\WellKnownFileManager\\WellKnownFiles\\' . $class_name;
 
         // Return the class name.
         return $full_class_name;
@@ -135,10 +135,39 @@ class Helpers {
      * @param string $filename The filename to check.
      * @return bool True if the file exists, false otherwise.
      */
-    public static function physical_file_exists(string $filename) : bool {
-        $well_known_dir = ABSPATH . '.well-known/';
-        $file_path = $well_known_dir . $filename;
-        return file_exists($file_path);
+    public static function physical_file_exists( string $filename ) : bool {
+        $well_known_dir = self::get_web_root_path() . '.well-known/';
+        $file_path      = $well_known_dir . $filename;
+        return file_exists( $file_path );
+    }
+
+    /**
+     * Gets the web root path.
+     *
+     * This function returns the root path of the website, which is not always
+     * the same as the WordPress installation directory (ABSPATH). It uses the
+     * WordPress get_home_path() function to reliably determine the correct path,
+     * which handles various server configurations and subdirectory installations.
+     *
+     * @return string The determined web root path, with a trailing slash.
+     */
+    public static function get_web_root_path() : string {
+        // get_home_path() is the most reliable way to get the root path of the site.
+        return get_home_path();
+    }
+
+    /**
+     * Checks if the WordPress site is running in a subdirectory.
+     * This is determined by checking if the home URL has a path component.
+     *
+     * @return bool True if the site is in a subdirectory, false otherwise.
+     */
+    public static function is_subdirectory_install() : bool {
+        $home_url = get_home_url();
+        $path     = wp_parse_url( $home_url, PHP_URL_PATH );
+
+        // If the path is null, empty, or just a slash, it's not a subdirectory install.
+        return ! empty( $path ) && '/' !== $path;
     }
 
     /**
@@ -155,6 +184,19 @@ class Helpers {
         $path = wp_parse_url($url, PHP_URL_PATH);
 
         return $path;
+    }
+
+    /**
+     * Serve a 404 error.
+     * 
+     * @return void
+     */
+    public static function serve_404() : void {
+        header('HTTP/1.1 404 Not Found');
+        header('Content-Type: text/plain');
+        header('x-robots-tag: noindex');
+        header('Cache-Control: max-age=3600, public');
+        exit();
     }
 
 }

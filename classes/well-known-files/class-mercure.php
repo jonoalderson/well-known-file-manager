@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Mercure extends Well_Known_File {
 
@@ -19,7 +19,7 @@ class Mercure extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Specifies the Mercure protocol hub for real-time updates.", 'well-known-manager');
+        return __("Specifies the Mercure protocol hub for real-time updates.", 'well-known-file-manager');
     }
 }
 ?>

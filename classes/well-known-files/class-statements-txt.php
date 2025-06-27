@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Statements_Txt extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Statements_Txt extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Supports a collective contract signing standard.", 'well-known-manager');
+        return __("Supports a collective contract signing standard.", 'well-known-file-manager');
     }
  
 }

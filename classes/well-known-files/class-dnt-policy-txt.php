@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Dnt_Policy_Txt extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Dnt_Policy_Txt extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Specifies the website's detailed Do Not Track (DNT) policy.", 'well-known-manager');
+        return __("Specifies the website's detailed Do Not Track (DNT) policy.", 'well-known-file-manager');
     }
 
 }

@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Change_Password extends Well_Known_File {
 
@@ -23,7 +23,7 @@ class Change_Password extends Well_Known_File {
 	}
 
 	public function get_description() {
-		return __( 'Provides the URL where users can change their account password.', 'well-known-manager' );
+		return __( 'Provides the URL where users can change their account password.', 'well-known-file-manager' );
 	}
 
 

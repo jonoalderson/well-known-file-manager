@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Http_Opportunistic extends Well_Known_File {
 
@@ -19,7 +19,7 @@ class Http_Opportunistic extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Supports Opportunistic Security for HTTP.", 'well-known-manager');
+        return __("Supports Opportunistic Security for HTTP.", 'well-known-file-manager');
     }
 
 }

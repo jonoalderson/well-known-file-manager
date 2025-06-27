@@ -1,4 +1,4 @@
-# Well-Known Manager
+# Well-Known File Manager
 
 Manage all your website's .well-known files in one place - from security policies to domain verification and more.
 
@@ -6,7 +6,7 @@ Manage all your website's .well-known files in one place - from security policie
 
 Your website needs to communicate with various services, bots, and systems. These interactions often require specific files in your `.well-known` directory - files that help others understand your site better, verify ownership, or implement security policies.
 
-Well-Known Manager makes it easy to manage all these important files from your WordPress admin panel. No more manual file creation or FTP uploads needed!
+Well-Known File Manager makes it easy to manage all these important files from your WordPress admin panel. No more manual file creation or FTP uploads needed!
 
 ## Why Do You Need This?
 

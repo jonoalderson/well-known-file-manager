@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Reload_Config extends Well_Known_File {
 
@@ -19,7 +19,7 @@ class Reload_Config extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Provides configuration for the RELOAD (REsource LOcation And Discovery) protocol.", 'well-known-manager');
+        return __("Provides configuration for the RELOAD (REsource LOcation And Discovery) protocol.", 'well-known-file-manager');
     }
 }
 ?>

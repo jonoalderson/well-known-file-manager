@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Hoba extends Well_Known_File {
 
@@ -14,7 +14,7 @@ class Hoba extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Supports the HTTP Origin-Bound Authentication (HOBA) method.", 'well-known-manager');
+        return __("Supports the HTTP Origin-Bound Authentication (HOBA) method.", 'well-known-file-manager');
     }
 
 }

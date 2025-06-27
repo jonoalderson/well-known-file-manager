@@ -1,8 +1,8 @@
 <?php
 
-namespace WellKnownManager\WellKnownFiles;
+namespace WellKnownFileManager\WellKnownFiles;
 
-use WellKnownManager\Well_Known_File;
+use WellKnownFileManager\Well_Known_File;
 
 class Uma2_Configuration extends Well_Known_File {
 
@@ -23,7 +23,7 @@ class Uma2_Configuration extends Well_Known_File {
     }
 
     public function get_description() {
-        return __("Provides User-Managed Access 2.0 configuration information.", 'well-known-manager');
+        return __("Provides User-Managed Access 2.0 configuration information.", 'well-known-file-manager');
     }
    
 }
