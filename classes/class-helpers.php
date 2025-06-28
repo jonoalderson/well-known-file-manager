@@ -57,7 +57,7 @@ class Helpers {
         $well_known_files = [];
 
         // Get the saved options.
-        $saved_files = get_option('well_known_files', []);
+        $saved_files = get_option('wkfm_files', []);
 
         // Iterate over all of our classes.
         foreach (self::get_well_known_file_classes() as $class_name) {

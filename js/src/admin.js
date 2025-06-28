@@ -136,12 +136,12 @@
             
             // Get the default content
             $.ajax({
-                url: ajaxurl,
+                url: WellKnownFileManager.ajaxurl,
                 type: 'POST',
                 data: {
-                    action: 'well_known_file_get_default_content',
+                    action: 'wkfm_get_default_content',
                     file_id: fileId,
-                    nonce: window.WellKnownFileManager.nonce
+                    nonce: WellKnownFileManager.nonce
                 },
                 success: (response) => {
                     if (response.success) {
@@ -176,11 +176,11 @@
             console.log('Sending nonce:', window.WellKnownFileManager.nonce);
 
             return $.ajax({
-                url: ajaxurl,
+                url: WellKnownFileManager.ajaxurl,
                 type: 'POST',
                 data: {
-                    action: 'well_known_file_manager_save_file',
-                    nonce: window.WellKnownFileManager.nonce,
+                    action: 'wkfm_save_file',
+                    nonce: WellKnownFileManager.nonce,
                     file: fileId,
                     content: content,
                     status: enabled,
@@ -232,18 +232,22 @@
             }, 3000);
         },
 
-        showNotice(message, type = 'success') {
-            const notice = document.createElement('div');
-            notice.className = `notice notice-${type} is-dismissible`;
-            notice.innerHTML = `<p>${message}</p>`;
+        showNotice(type, message) {
+            const noticeDiv = document.createElement('div');
+            noticeDiv.className = `notice notice-${type} is-dismissible`;
+            noticeDiv.innerHTML = `<p>${message}</p>`;
             
-            const container = document.querySelector('.wrap');
-            container.insertBefore(notice, container.firstChild);
-            
-            // Auto-dismiss after 5 seconds.
-            setTimeout(() => {
-                notice.remove();
-            }, 5000);
+            const adminPage = document.querySelector('.well-known-file-manager-admin');
+            if (adminPage) {
+                adminPage.insertBefore(noticeDiv, adminPage.firstChild);
+                
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => {
+                    if (noticeDiv.parentNode) {
+                        noticeDiv.remove();
+                    }
+                }, 5000);
+            }
         }
     });
 

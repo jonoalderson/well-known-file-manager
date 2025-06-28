@@ -22,7 +22,6 @@ class Handler {
      * Initializes the cache object.
      */
     public function __construct() {
-        $this->cache = new \WP_Object_Cache();
         $this->register_hooks();
     }
 
@@ -32,7 +31,7 @@ class Handler {
      * @return void
      */
     private function register_hooks() : void {
-        add_action('plugins_loaded', [$this, 'serve_files']);
+        add_action('init', [$this, 'serve_files'], 1);
     }
 
     /**
@@ -45,10 +44,10 @@ class Handler {
     private function serve_from_cache( string $path ) : bool {
             
         // Define the cache key for the request.
-        $cache_key = 'well_known_' . md5(basename($path));
+        $cache_key = 'wkfm_' . md5(basename($path));
 
         // Check if we have a cached response.
-        $cached_response = $this->cache->get($cache_key, Plugin::CACHE_GROUP);
+        $cached_response = wp_cache_get($cache_key, Plugin::CACHE_GROUP);
 
         // IF we got a cached response, just serve it.
         if ($cached_response !== false) {
@@ -74,8 +73,16 @@ class Handler {
 
         $path = Helpers::get_cleaned_request_path();
 
+        // Debug: Log all requests to see what's being processed.
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Well-Known File Manager: Checking path: ' . $path);
+        }
+
         // Check if the request is for a well-known file.
         if (strpos($path, '.well-known') !== false) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('Well-Known File Manager: Detected .well-known request for: ' . $path);
+            }
             return true;
         }
 
@@ -137,12 +144,12 @@ class Handler {
         $this->serve_file($instance);
 
         // Cache the response.
-        $this->cache->set(
-            'well_known_' . md5(basename($path)),
+        wp_cache_set(
+            'wkfm_' . md5(basename($path)),
             [
                 'content_type' => $instance->get_content_type(),
                 'content' => $instance->get_content(),
-                'status' => $file['status']
+                'status' => $instance->get_status()
             ],
             Plugin::CACHE_GROUP,
             3600 // Cache for 1 hour.

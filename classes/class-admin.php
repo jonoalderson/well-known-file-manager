@@ -12,22 +12,21 @@ namespace WellKnownFileManager;
 class Admin {
 
     /**
-     * @var \WP_Object_Cache $cache The cache object.
-     */
-    private $cache;
-
-    /**
      * @var array $options The options.
      */
     private $options = [];
 
     /**
+     * @var Htaccess The htaccess object.
+     */
+    private $htaccess;
+
+    /**
      * Admin constructor.
      *
-     * Initializes the cache object.
+     * Initializes the admin functionality.
      */
     public function __construct() {
-        $this->cache = new \WP_Object_Cache();
         $this->register_hooks();
     }
 
@@ -36,17 +35,12 @@ class Admin {
      *
      * @return void
      */
-    public function register_hooks() {
+    public function register_hooks() : void {
         add_action('admin_menu', [$this, 'add_admin_menu']);
-        add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
-        add_action('admin_post_save_well_known_files', [$this, 'save_well_known_files']);
-        add_action('update_option_well_known_file_manager_options', [$this, 'purge_cache_on_update'], 10, 3);
-        add_action('wp_ajax_toggle_well_known_file', [$this, 'ajax_toggle_well_known_file']);
-        add_action('wp_ajax_well_known_file_manager_save_file', [$this, 'ajax_save_well_known_file']);
-        add_action('wp_ajax_well_known_file_get_default_content', [$this, 'ajax_get_default_content']);
-        add_action('admin_notices', [$this, 'show_subdirectory_install_warning']);
-        add_filter('plugin_action_links_well-known-file-manager/well-known-file-manager.php', [$this, 'add_plugin_action_links']);
+        add_action('wp_ajax_wkfm_toggle_well_known_file', [$this, 'ajax_toggle_well_known_file']);
+        add_action('wp_ajax_wkfm_save_file', [$this, 'ajax_save_well_known_file']);
+        add_action('wp_ajax_wkfm_get_default_content', [$this, 'ajax_get_default_content']);
     }
 
     /**
@@ -116,7 +110,7 @@ class Admin {
 
         // Localize the script with the nonce and other data.
         wp_localize_script('well-known-file-manager-admin-script', 'WellKnownFileManager', [
-            'nonce' => wp_create_nonce('well_known_file_manager_nonce'),
+            'nonce' => wp_create_nonce('wkfm_nonce'),
             'ajaxurl' => admin_url('admin-ajax.php'),
             'i18n' => [
                 'saving' => __('Saving...', 'well-known-file-manager'),
@@ -191,16 +185,16 @@ class Admin {
      */
     public function register_settings() {
         register_setting(
-            'well_known_files_group',
-            'well_known_files',
+            'wkfm_files_group',
+            'wkfm_files',
             [
                 'sanitize_callback' => [$this, 'sanitize_well_known_files'],
                 'default' => []
             ]
         );
         register_setting(
-            'well_known_files_group',
-            'well_known_file_manager_options',
+            'wkfm_files_group',
+            'wkfm_options',
             [
                 'sanitize_callback' => [$this, 'sanitize_well_known_file_manager_options'],
                 'default' => []
@@ -239,7 +233,7 @@ class Admin {
     }
 
     /**
-     * Renders the admin page
+     * Render the admin page
      *
      * @return void
      */
@@ -249,17 +243,100 @@ class Admin {
             wp_die(esc_html__('You do not have sufficient permissions to access this page.', 'well-known-file-manager'));
         }
 
+        // Check for file synchronization issues
+        $sync_data = $this->check_file_synchronization();
+
         // Render the admin page.
         echo '<div class="wrap well-known-file-manager-admin">';
         echo '<h1>' . esc_html__('Well-Known File Manager', 'well-known-file-manager') . '</h1>';
 
         // Add the nonce field
-        wp_nonce_field('well_known_file_manager_nonce', 'well_known_file_manager_nonce');
+        wp_nonce_field('wkfm_nonce', 'wkfm_nonce');
+
+        // Show auto-fix notice if any files were auto-enabled
+        if (!empty($sync_data['auto_fixes'])) {
+            echo '<div class="notice notice-info is-dismissible">';
+            echo '<p><strong>' . esc_html__('Auto-Fixed File Synchronization:', 'well-known-file-manager') . '</strong></p>';
+            echo '<p>' . esc_html(sprintf(
+                __('Found %d physical files that were not enabled in the database. These have been automatically enabled.', 'well-known-file-manager'),
+                count($sync_data['auto_fixes'])
+            )) . '</p>';
+            echo '</div>';
+        }
+
+        // Show created files notice if any files were auto-created
+        if (!empty($sync_data['created_files'])) {
+            echo '<div class="notice notice-success is-dismissible">';
+            echo '<p><strong>' . esc_html__('Auto-Created Missing Files:', 'well-known-file-manager') . '</strong></p>';
+            echo '<p>' . esc_html(sprintf(
+                __('Recreated %d missing physical files: %s', 'well-known-file-manager'),
+                count($sync_data['created_files']),
+                implode(', ', $sync_data['created_files'])
+            )) . '</p>';
+            echo '</div>';
+        }
 
         // Render the files sections.
         $this->render_files_options();
 
         echo '</div>';
+    }
+
+    /**
+     * Check for synchronization issues between database and physical files.
+     *
+     * @return array Array of auto-fixes applied.
+     */
+    private function check_file_synchronization() : array {
+        $options = get_option('wkfm_files', []);
+        $file_classes = Helpers::get_well_known_file_classes();
+        $auto_fixes = [];
+        $created_files = [];
+
+        foreach ($file_classes as $class_name) {
+            $instance = new $class_name();
+            $short_class_name = (new \ReflectionClass($instance))->getShortName();
+            $filename = $instance->get_filename();
+            
+            // Check if file is enabled in database
+            $is_enabled_in_db = isset($options[$short_class_name]['status']) && $options[$short_class_name]['status'];
+            
+            // Check if physical file exists
+            $physical_file_exists = $instance->physical_file_exists();
+            
+            // Check for sync issues
+            if ($is_enabled_in_db && !$physical_file_exists) {
+                // File should exist but doesn't - auto-create it
+                $content = isset($options[$short_class_name]['content']) ? $options[$short_class_name]['content'] : $instance->get_content();
+                
+                $success = $instance->create_or_update_physical_file($content);
+                
+                if ($success) {
+                    $created_files[] = $filename;
+                }
+            } elseif (!$is_enabled_in_db && $physical_file_exists) {
+                // File shouldn't exist but does - auto-fix by enabling
+                $auto_fixes[] = $short_class_name;
+                
+                // Update database to match physical state
+                if (!isset($options[$short_class_name])) {
+                    $options[$short_class_name] = [];
+                }
+                $options[$short_class_name]['status'] = true;
+                $options[$short_class_name]['content'] = $instance->get_content();
+                $options[$short_class_name]['response_code'] = 200;
+            }
+        }
+        
+        // Save any auto-fixes
+        if (!empty($auto_fixes)) {
+            update_option('wkfm_files', $options);
+        }
+        
+        return [
+            'auto_fixes' => $auto_fixes,
+            'created_files' => $created_files
+        ];
     }
 
     /**
@@ -304,11 +381,13 @@ class Admin {
 
         // Render priority files first
         foreach ($priority_classes as $class_name) {
+            $short_name = (new \ReflectionClass($class_name))->getShortName();
             $this->render_file_card($class_name, true);
         }
 
         // Then render regular files
         foreach ($regular_classes as $class_name) {
+            $short_name = (new \ReflectionClass($class_name))->getShortName();
             $this->render_file_card($class_name, false);
         }
 
@@ -329,14 +408,13 @@ class Admin {
         $description = $instance->get_description();
         $content = $instance->get_content();
         $status = $instance->get_status();
-        $has_physical_file = Helpers::physical_file_exists($filename);
         $content_type = $instance->get_content_type();
 
         // Get the short class name for the form field.
         $short_class_name = (new \ReflectionClass($instance))->getShortName();
 
         // Get validation error if any.
-        $options = get_option('well_known_files', []);
+        $options = get_option('wkfm_files', []);
 
         $card_class = 'well-known-file-card';
         if (!$status) {
@@ -369,16 +447,8 @@ class Admin {
         echo '</div>';
         echo '<p class="description">' . esc_html($description) . '</p>';
 
-        if ($has_physical_file) {
-            echo '<div class="physical-file-warning">';
-            echo '<span class="dashicons dashicons-warning"></span> ';
-            echo esc_html__('A physical version of this file exists in your .well-known directory. This version will not be served.', 'well-known-file-manager');
-            echo '</div>';
-        }
-
         echo '<div class="well-known-file-content">';
         echo '<textarea ' . disabled(!$status, true, false) . '>' . esc_textarea($content) . '</textarea>';
-
         echo '</div>';
         echo '</div>';
     }
@@ -391,7 +461,7 @@ class Admin {
     public function save_well_known_files() {
         
         // Verify nonce.
-        if (!isset($_POST['well_known_files_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['well_known_files_nonce'])), 'save_well_known_files')) {
+        if (!isset($_POST['wkfm_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['wkfm_nonce'])), 'save_wkfm_files')) {
             wp_die(esc_html__('Security check failed.', 'well-known-file-manager'));
         }
 
@@ -401,7 +471,7 @@ class Admin {
         }
 
         // Get the files data.
-        $files = isset($_POST['well_known_files']) ? array_map('sanitize_text_field', wp_unslash($_POST['well_known_files'])) : [];
+        $files = isset($_POST['wkfm_files']) ? array_map('sanitize_text_field', wp_unslash($_POST['wkfm_files'])) : [];
         if (empty($files)) {
             wp_die(esc_html__('No files data received.', 'well-known-file-manager'));
         }
@@ -429,10 +499,10 @@ class Admin {
         }
 
         // Save the validated data.
-        update_option('well_known_files', $files_to_save);
+        update_option('wkfm_files', $files_to_save);
 
         // Redirect back with success message.
-        wp_redirect(add_query_arg('settings-updated', 'true', wp_get_referer()));
+        wp_safe_redirect(add_query_arg('settings-updated', 'true', wp_get_referer()));
         exit;
     }
 
@@ -446,7 +516,8 @@ class Admin {
      * @return void
      */
     public function purge_cache_on_update($old_value, $value, $option) {
-        $this->cache->flush_group(Plugin::CACHE_GROUP);
+        // Flush only our cache group to avoid affecting other plugins.
+        wp_cache_flush_group(Plugin::CACHE_GROUP);
     }
 
     /**
@@ -457,7 +528,7 @@ class Admin {
     public function ajax_toggle_well_known_file() {
         try {
             // Verify nonce
-            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'well_known_file_manager_nonce')) {
+            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'wkfm_nonce')) {
                 wp_send_json_error(['message' => __('Security check failed.', 'well-known-file-manager')]);
                 return;
             }
@@ -505,60 +576,67 @@ class Admin {
     }
 
     /**
-     * Handles the AJAX request to save a well-known file.
+     * AJAX handler for saving well-known file content.
      *
      * @return void
      */
     public function ajax_save_well_known_file() {
-        try {
-            // Verify nonce
-            if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'well_known_file_manager_nonce')) {
-                wp_send_json_error(['message' => __('Security check failed.', 'well-known-file-manager')]);
-                return;
-            }
-            
-            // Check permissions
-            if (!current_user_can('manage_options')) {
-                wp_send_json_error(['message' => __('You do not have permission to perform this action.', 'well-known-file-manager')]);
-                return;
-            }
-            
-            // Get and validate file ID
-            $file_id = isset($_POST['file']) ? sanitize_text_field(wp_unslash($_POST['file'])) : '';
-            if (empty($file_id)) {
-                wp_send_json_error(['message' => __('No file specified.', 'well-known-file-manager')]);
-                return;
-            }
-            
-            // Get content and status
-            $content = isset($_POST['content']) ? sanitize_textarea_field(wp_unslash($_POST['content'])) : '';
-            $status = isset($_POST['status']) ? filter_var(wp_unslash($_POST['status']), FILTER_VALIDATE_BOOLEAN) : false;
-            
-            // Get the class name
-            $class_name = Helpers::convert_filename_to_class_name($file_id);
-            
-            if (!class_exists($class_name)) {
-                wp_send_json_error(['message' => __('Invalid file type.', 'well-known-file-manager')]);
-                return;
-            }
-            
-            // Create instance and update content
-            $file = new $class_name();
-            $file->update_content($content);
-            $file->update_status($status);
-            
-            // Purge caches
-            $this->cache->flush_group(Plugin::CACHE_GROUP);
-            
-            wp_send_json_success([
-                'message' => __('File saved successfully.', 'well-known-file-manager')
-            ]);
-            
-        } catch (\Exception $e) {
-            wp_send_json_error([
-                'message' => __('Error saving file.', 'well-known-file-manager')
-            ]);
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'wkfm_nonce')) {
+            wp_send_json_error(['message' => __('Security check failed.', 'well-known-file-manager')]);
         }
+
+        // Check permissions
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action.', 'well-known-file-manager')]);
+        }
+
+        // Get file ID
+        $file_id = isset($_POST['file']) ? sanitize_text_field(wp_unslash($_POST['file'])) : '';
+        if (empty($file_id)) {
+            wp_send_json_error(['message' => __('No file ID provided.', 'well-known-file-manager')]);
+        }
+
+        // Get the file handler
+        $file_handler = Helpers::get_well_known_file($file_id);
+        if (!$file_handler) {
+            wp_send_json_error(['message' => __('Invalid file ID.', 'well-known-file-manager')]);
+        }
+
+        // Get content and status
+        $content = isset($_POST['content']) ? wp_unslash($_POST['content']) : '';
+        $enabled = isset($_POST['status']) && $_POST['status'] === 'true';
+        $response_code = isset($_POST['response_code']) ? intval($_POST['response_code']) : 200;
+
+        // Save to database
+        $options = get_option('wkfm_files', []);
+        $options[$file_id] = [
+            'content' => $content,
+            'status' => $enabled,
+            'response_code' => $response_code
+        ];
+        update_option('wkfm_files', $options);
+
+        // Handle physical file creation/deletion
+        if ($enabled) {
+            // Create or update the physical file
+            $success = $file_handler->create_or_update_physical_file($content);
+            if (!$success) {
+                wp_send_json_error(['message' => __('Failed to create physical file. Please check file permissions.', 'well-known-file-manager')]);
+            }
+        } else {
+            // Delete the physical file
+            $file_handler->delete_physical_file();
+        }
+
+        // Clear any caches
+        if (function_exists('wp_cache_flush')) {
+            wp_cache_flush();
+        }
+
+        wp_send_json_success([
+            'message' => $enabled ? __('File enabled and saved successfully.', 'well-known-file-manager') : __('File disabled and removed successfully.', 'well-known-file-manager')
+        ]);
     }
 
     /**
@@ -568,7 +646,7 @@ class Admin {
      */
     public function ajax_get_default_content() {
         // Verify nonce
-        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'well_known_file_manager_nonce')) {
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'wkfm_nonce')) {
             wp_send_json_error(['message' => __('Invalid nonce.', 'well-known-file-manager')]);
         }
 

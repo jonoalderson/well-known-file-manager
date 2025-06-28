@@ -57,7 +57,7 @@ abstract class Well_Known_File {
         $class_name = (new \ReflectionClass($this))->getShortName();
         
         // Convert to lowercase and sanitize.
-        return 'well_known_files_' . strtolower(sanitize_key($class_name));
+        return 'wkfm_files_' . strtolower(sanitize_key($class_name));
     }
 
     /**
@@ -131,7 +131,7 @@ abstract class Well_Known_File {
      */
     public function get_status() : bool {
         // Get the options.
-        $options = get_option('well_known_files');
+        $options = get_option('wkfm_files');
 
         // If we didn't get any options, return false.
         if (!$options) {
@@ -163,7 +163,7 @@ abstract class Well_Known_File {
      */
     public function update_status( bool $status ) : bool {
         // Get the current options.
-        $options = get_option('well_known_files', []);
+        $options = get_option('wkfm_files', []);
 
         // Get the class name without the namespace.
         $class_name = (new \ReflectionClass($this))->getShortName();
@@ -177,7 +177,7 @@ abstract class Well_Known_File {
         $options[$class_name]['status'] = $status;
 
         // Save the options.
-        return update_option('well_known_files', $options);
+        return update_option('wkfm_files', $options);
     }
 
     /**
@@ -197,4 +197,116 @@ abstract class Well_Known_File {
      * @return string The description of the well-known file.
      */
     abstract public function get_description();
+
+    /**
+     * Gets the physical file path for this well-known file.
+     *
+     * @return string The physical file path.
+     */
+    public function get_physical_file_path() : string {
+        return \get_home_path() . '.well-known/' . $this->get_filename();
+    }
+
+    /**
+     * Creates or updates the physical file.
+     *
+     * @param string $content The content to write to the file.
+     * @return bool True on success, false on failure.
+     */
+    public function create_or_update_physical_file(string $content) : bool {
+        $file_path = $this->get_physical_file_path();
+        $directory = \dirname($file_path);
+
+        // Create .well-known directory if it doesn't exist
+        if (!\is_dir($directory)) {
+            // Try multiple directory creation methods
+            $mkdir_success = $this->create_directory_with_fallbacks($directory);
+            
+            if (!$mkdir_success) {
+                return false;
+            }
+            
+            // Double-check the directory was actually created
+            if (!\is_dir($directory)) {
+                return false;
+            }
+        }
+
+        // Check if directory is writable
+        if (!\is_writable($directory)) {
+            return false;
+        }
+
+        // Write the file content
+        $result = \file_put_contents($file_path, $content);
+        
+        if ($result === false) {
+            return false;
+        }
+
+        // Set proper permissions (readable by web server)
+        \chmod($file_path, 0644);
+        
+        return true;
+    }
+
+    /**
+     * Creates a directory using multiple fallback methods.
+     *
+     * @param string $directory The directory path to create.
+     * @return bool True on success, false on failure.
+     */
+    private function create_directory_with_fallbacks(string $directory) : bool {
+        // Method 1: WordPress wp_mkdir_p
+        $result = \wp_mkdir_p($directory);
+        if ($result && \is_dir($directory)) {
+            return true;
+        }
+
+        // Method 2: PHP mkdir with recursive flag
+        $result = \mkdir($directory, 0755, true);
+        if ($result && \is_dir($directory)) {
+            return true;
+        }
+
+        // Method 3: Try creating parent directories first
+        $parent_dir = \dirname($directory);
+        if (!\is_dir($parent_dir)) {
+            \wp_mkdir_p($parent_dir);
+        }
+
+        // Method 4: Try mkdir again after parent creation
+        if (\is_dir($parent_dir)) {
+            $result = \mkdir($directory, 0755);
+            if ($result && \is_dir($directory)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Deletes the physical file.
+     *
+     * @return bool True on success, false on failure.
+     */
+    public function delete_physical_file() : bool {
+        $file_path = $this->get_physical_file_path();
+        
+        if (\file_exists($file_path)) {
+            return \unlink($file_path);
+        }
+        
+        return true; // File doesn't exist, consider it "deleted"
+    }
+
+    /**
+     * Checks if the physical file exists.
+     *
+     * @return bool True if the file exists, false otherwise.
+     */
+    public function physical_file_exists() : bool {
+        return \file_exists($this->get_physical_file_path());
+    }
 }
