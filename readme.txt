@@ -1,10 +1,10 @@
 === Well-Known File Manager ===
-Contributors: jonoalderson
+Contributors: jonoaldersonwp
 Tags: well-known, files
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.4.3
+Stable tag: 1.4.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -130,6 +130,9 @@ Yes! The plugin is designed to work with WordPress caching plugins. Since files 
 * Core functionality
 
 == Upgrade Notice ==
+
+= 1.4.5 =
+BUGFIX: Harden against some edge cases with malformed URLs.
 
 = 1.4.3 =
 This is a major update that changes how the plugin works. The plugin now creates physical files instead of using .htaccess routing. This provides better compatibility and performance across all hosting environments. No manual configuration required!

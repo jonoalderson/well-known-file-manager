@@ -88,8 +88,18 @@ class Helpers {
      */
     public static function get_well_known_file( string $file ) {
 
+        // Bail if the file is empty.
+        if (empty($file)) {
+            return false;
+        }
+
         // Clean the filename.
         $file = basename($file);
+        
+        // Bail if the cleaned filename is empty or just a dot.
+        if (empty($file) || $file === '.') {
+            return false;
+        }
       
         // Get the files.
         $files = self::get_well_known_files();
@@ -115,8 +125,18 @@ class Helpers {
      */
     public static function convert_filename_to_class_name( string $file ) : string {
 
+        // Bail if the file is empty.
+        if (empty($file)) {
+            return '';
+        }
+
         // Clean the filename.
         $file = basename($file);
+        
+        // Bail if the cleaned filename is empty or just a dot.
+        if (empty($file) || $file === '.') {
+            return '';
+        }
 
         // Convert the filename to a class name.
         $class_name = str_replace( [ '-', '.' ], '_', $file);
@@ -183,7 +203,8 @@ class Helpers {
         // Get the path.
         $path = wp_parse_url($url, PHP_URL_PATH);
 
-        return $path;
+        // Ensure we always return a string.
+        return $path ?: '';
     }
 
     /**
@@ -194,8 +215,8 @@ class Helpers {
     public static function serve_404() : void {
         header('HTTP/1.1 404 Not Found');
         header('Content-Type: text/plain');
-        header('x-robots-tag: noindex');
         header('Cache-Control: max-age=3600, public');
+        header('x-robots-tag: noindex');
         exit();
     }
 

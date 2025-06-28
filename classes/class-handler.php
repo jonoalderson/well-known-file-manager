@@ -43,6 +43,11 @@ class Handler {
      */
     private function serve_from_cache( string $path ) : bool {
             
+        // Bail if the path is empty.
+        if (empty($path)) {
+            return false;
+        }
+
         // Define the cache key for the request.
         $cache_key = 'wkfm_' . md5(basename($path));
 
@@ -121,6 +126,11 @@ class Handler {
 
         // Get the requested filename.
         $path = Helpers::get_cleaned_request_path();
+        
+        // Bail if the path is empty.
+        if (empty($path)) {
+            return;
+        }
         
         // Get an instance of the file.
         $instance = Helpers::get_well_known_file($path);
