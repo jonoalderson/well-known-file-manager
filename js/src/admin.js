@@ -321,6 +321,9 @@
                         $buttons.prop('disabled', true);
                     }
                     
+                    // Show success notification
+                    this.showSaveNotice($card, response.data.message);
+                    
                     // Return the response for the calling method to handle
                     return response;
                 } else {
