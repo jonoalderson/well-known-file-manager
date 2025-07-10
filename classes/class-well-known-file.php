@@ -19,12 +19,19 @@ abstract class Well_Known_File {
      */
     const FILENAME = 'UNKNOWN';
 
-	/**
-	 * The content type for the file.
-	 *
-	 * @var string
-	 */
-	const CONTENT_TYPE = 'text/plain';
+	    /**
+     * The content type for the file.
+     *
+     * @var string
+     */
+    const CONTENT_TYPE = 'text/plain';
+
+    /**
+     * The type of file (content or redirect).
+     *
+     * @var string
+     */
+    const FILE_TYPE = 'content';
 
     /**
      * The content of the file.
@@ -52,7 +59,7 @@ abstract class Well_Known_File {
      *
      * @return string The sanitized option name.
      */
-    private function get_option_name() : string {
+    public function get_option_name() : string {
         // Get the class name without the namespace.
         $class_name = (new \ReflectionClass($this))->getShortName();
         
@@ -63,16 +70,93 @@ abstract class Well_Known_File {
     /**
      * Get the content of the file.
      *
+     * Priority order:
+     * 1. Physical file content (if file exists and is readable)
+     * 2. Database content (if saved in WordPress options)
+     * 3. Default content (fallback)
+     *
      * @return string The content of the file.
      */
     public function get_content() {
-        // Get content from dedicated option.
+        // First, check if physical file exists and is readable.
+        $file_path = $this->get_physical_file_path();
+        if ($this->physical_file_exists() && is_readable($file_path)) {
+            $physical_content = file_get_contents($file_path);
+            if ($physical_content !== false) {
+                // Sync physical file content back to database for consistency.
+                $this->sync_physical_content_to_database($physical_content);
+                return $physical_content;
+            }
+        }
+        
+        // If no physical file or unreadable, get content from dedicated option.
         $content = get_option($this->get_option_name());
         if ($content !== false) {
             return $content;
         }
         
+        // Fallback to default content.
         return $this->get_default_content();
+    }
+
+    /**
+     * Syncs physical file content back to the database for consistency.
+     *
+     * @param string $content The content from the physical file.
+     * @return void
+     */
+    private function sync_physical_content_to_database($content) : void {
+        // Only sync if the content is different from what's in the database.
+        $db_content = get_option($this->get_option_name());
+        if ($db_content !== $content) {
+            update_option($this->get_option_name(), $content);
+        }
+    }
+
+    /**
+     * Gets content directly from the physical file without syncing to database.
+     *
+     * @return string|false The content from the physical file, or false if file doesn't exist or is unreadable.
+     */
+    public function get_physical_file_content() {
+        $file_path = $this->get_physical_file_path();
+        
+        if (!$this->physical_file_exists() || !is_readable($file_path)) {
+            return false;
+        }
+        
+        $content = file_get_contents($file_path);
+        return $content !== false ? $content : false;
+    }
+
+    /**
+     * Gets formatted content for display purposes.
+     *
+     * @return string The formatted content.
+     */
+    public function get_formatted_content() {
+        $content = $this->get_content();
+        return $this->format_content_for_display($content);
+    }
+
+    /**
+     * Formats content for display based on content type.
+     *
+     * @param string $content The content to format.
+     * @return string The formatted content.
+     */
+    private function format_content_for_display($content) {
+        // If content type is JSON, format it with JSON_UNESCAPED_SLASHES.
+        if (strpos($this->get_content_type(), 'application/json') !== false || strpos($this->get_content_type(), 'json') !== false) {
+            // Try to decode and re-encode with proper formatting.
+            $decoded = json_decode($content, true);
+            if ($decoded !== null) {
+                return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            }
+        }
+        
+        // Return content as-is for non-JSON content types.
+        return $content;
     }
 
     /**
@@ -124,6 +208,19 @@ abstract class Well_Known_File {
         }
 
         return static::CONTENT_TYPE;
+    }
+
+    /**
+     * Get the file type.
+     *
+     * @return string The file type (content or redirect).
+     */
+    public function get_file_type() {
+        if ( ! defined( 'static::FILE_TYPE' ) ) {
+            return 'content';
+        }
+
+        return static::FILE_TYPE;
     }
 
     /**
@@ -204,7 +301,7 @@ abstract class Well_Known_File {
      * @return string The physical file path.
      */
     public function get_physical_file_path() : string {
-        return \get_home_path() . '.well-known/' . $this->get_filename();
+        return \WellKnownFileManager\Helpers::get_web_root_path() . '.well-known/' . $this->get_filename();
     }
 
     /**

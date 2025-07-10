@@ -172,8 +172,33 @@ class Helpers {
      * @return string The determined web root path, with a trailing slash.
      */
     public static function get_web_root_path() : string {
-        // get_home_path() is the most reliable way to get the root path of the site.
-        return get_home_path();
+        
+        // Try to use get_home_path() if available (admin context)
+        if (function_exists('get_home_path')) {
+            return get_home_path();
+        }
+        
+        // Fallback: use ABSPATH and calculate the difference
+        $home_url = get_home_url();
+        $site_url = get_site_url();
+        
+        // If home and site URLs are the same, use ABSPATH
+        if ($home_url === $site_url) {
+            return ABSPATH;
+        }
+        
+        // Calculate the path difference
+        $home_path = wp_parse_url($home_url, PHP_URL_PATH);
+        $site_path = wp_parse_url($site_url, PHP_URL_PATH);
+        
+        // Remove the site path from ABSPATH to get the home path
+        if ($home_path && $site_path && $home_path !== $site_path) {
+            $path_diff = str_replace($site_path, '', $home_path);
+            return ABSPATH . ltrim($path_diff, '/');
+        }
+        
+        // Final fallback to ABSPATH
+        return ABSPATH;
     }
 
     /**

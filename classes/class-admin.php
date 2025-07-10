@@ -40,6 +40,7 @@ class Admin {
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
         add_action('wp_ajax_wkfm_toggle_well_known_file', [$this, 'ajax_toggle_well_known_file']);
         add_action('wp_ajax_wkfm_save_file', [$this, 'ajax_save_well_known_file']);
+        add_action('wp_ajax_wkfm_save_redirect_file', [$this, 'ajax_save_redirect_file']);
         add_action('wp_ajax_wkfm_get_default_content', [$this, 'ajax_get_default_content']);
     }
 
@@ -112,6 +113,7 @@ class Admin {
         wp_localize_script('well-known-file-manager-admin-script', 'WellKnownFileManager', [
             'nonce' => wp_create_nonce('wkfm_nonce'),
             'ajaxurl' => admin_url('admin-ajax.php'),
+            'lostPasswordUrl' => wp_lostpassword_url(),
             'i18n' => [
                 'saving' => __('Saving...', 'well-known-file-manager'),
                 'error' => __('Error saving file state.', 'well-known-file-manager')
@@ -304,27 +306,29 @@ class Admin {
             // Check if physical file exists
             $physical_file_exists = $instance->physical_file_exists();
             
-            // Check for sync issues
-            if ($is_enabled_in_db && !$physical_file_exists) {
-                // File should exist but doesn't - auto-create it
-                $content = isset($options[$short_class_name]['content']) ? $options[$short_class_name]['content'] : $instance->get_content();
-                
-                $success = $instance->create_or_update_physical_file($content);
-                
-                if ($success) {
-                    $created_files[] = $filename;
+            // Check for sync issues (only for content files)
+            if ($instance->get_file_type() === 'content') {
+                if ($is_enabled_in_db && !$physical_file_exists) {
+                    // File should exist but doesn't - auto-create it
+                    $content = isset($options[$short_class_name]['content']) ? $options[$short_class_name]['content'] : $instance->get_content();
+                    
+                    $success = $instance->create_or_update_physical_file($content);
+                    
+                    if ($success) {
+                        $created_files[] = $filename;
+                    }
+                } elseif (!$is_enabled_in_db && $physical_file_exists) {
+                    // File shouldn't exist but does - auto-fix by enabling
+                    $auto_fixes[] = $short_class_name;
+                    
+                    // Update database to match physical state
+                    if (!isset($options[$short_class_name])) {
+                        $options[$short_class_name] = [];
+                    }
+                    $options[$short_class_name]['status'] = true;
+                    $options[$short_class_name]['content'] = $instance->get_content();
+                    $options[$short_class_name]['response_code'] = 200;
                 }
-            } elseif (!$is_enabled_in_db && $physical_file_exists) {
-                // File shouldn't exist but does - auto-fix by enabling
-                $auto_fixes[] = $short_class_name;
-                
-                // Update database to match physical state
-                if (!isset($options[$short_class_name])) {
-                    $options[$short_class_name] = [];
-                }
-                $options[$short_class_name]['status'] = true;
-                $options[$short_class_name]['content'] = $instance->get_content();
-                $options[$short_class_name]['response_code'] = 200;
             }
         }
         
@@ -447,8 +451,49 @@ class Admin {
         echo '</div>';
         echo '<p class="description">' . esc_html($description) . '</p>';
 
-        echo '<div class="well-known-file-content">';
-        echo '<textarea ' . disabled(!$status, true, false) . '>' . esc_textarea($content) . '</textarea>';
+        // Only check for physical file differences for content files
+        if ($instance->get_file_type() === 'content' && $status && $instance->physical_file_exists()) {
+            $physical_content = $instance->get_physical_file_content();
+            $db_content = get_option($instance->get_option_name());
+            
+            if ($physical_content !== false && $physical_content !== $db_content) {
+                echo '<div class="physical-file-warning">';
+                echo '<span class="dashicons dashicons-warning"></span>';
+                echo '<div>';
+                echo '<strong>' . esc_html__('Physical file differs from database content.', 'well-known-file-manager') . '</strong><br>';
+                echo esc_html__('The physical file has been modified outside of this plugin. The content will be automatically synced when accessed.', 'well-known-file-manager');
+                echo '</div>';
+                echo '</div>';
+            }
+        }
+
+        // Check if this is a redirect file.
+        if ($instance->get_file_type() === 'redirect') {
+            $this->render_redirect_file_content($instance, $status);
+        } else {
+            echo '<div class="well-known-file-content">';
+            echo '<textarea ' . disabled(!$status, true, false) . '>' . esc_textarea($instance->get_formatted_content()) . '</textarea>';
+            echo '</div>';
+        }
+        echo '</div>';
+    }
+
+    /**
+     * Renders the content area for redirect files.
+     *
+     * @param Well_Known_File $instance The file instance.
+     * @param bool $status Whether the file is enabled.
+     * @return void
+     */
+    private function render_redirect_file_content($instance, $status) {
+        $redirect_url = $instance->get_redirect_url();
+        $short_class_name = (new \ReflectionClass($instance))->getShortName();
+        
+        echo '<div class="well-known-file-content redirect-file">';
+        echo '<div class="redirect-url-section">';
+        echo '<label for="redirect-url-' . esc_attr($short_class_name) . '">' . esc_html__('Redirect URL:', 'well-known-file-manager') . '</label>';
+        echo '<input type="url" id="redirect-url-' . esc_attr($short_class_name) . '" class="redirect-url-input" value="' . esc_attr($redirect_url) . '" ' . disabled(!$status, true, false) . ' data-file-id="' . esc_attr($short_class_name) . '">';
+        echo '<p class="description">' . esc_html__('When this file is accessed, users will be redirected to this URL.', 'well-known-file-manager') . '</p>';
         echo '</div>';
         echo '</div>';
     }
@@ -576,6 +621,77 @@ class Admin {
     }
 
     /**
+     * AJAX handler for saving redirect file settings.
+     *
+     * @return void
+     */
+    public function ajax_save_redirect_file() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'wkfm_nonce')) {
+            wp_send_json_error(['message' => __('Security check failed.', 'well-known-file-manager')]);
+        }
+
+        // Check permissions
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('You do not have permission to perform this action.', 'well-known-file-manager')]);
+        }
+
+        // Get file ID
+        $file_id = isset($_POST['file']) ? sanitize_text_field(wp_unslash($_POST['file'])) : '';
+        if (empty($file_id)) {
+            wp_send_json_error(['message' => __('No file ID provided.', 'well-known-file-manager')]);
+        }
+
+        // Get the file handler
+        $file_handler = Helpers::get_well_known_file($file_id);
+        if (!$file_handler) {
+            wp_send_json_error(['message' => __('Invalid file ID.', 'well-known-file-manager')]);
+        }
+
+        // Check if this is a redirect file
+        if ($file_handler->get_file_type() !== 'redirect') {
+            wp_send_json_error(['message' => __('This file is not a redirect file.', 'well-known-file-manager')]);
+        }
+
+        // Get redirect URL and status
+        $redirect_url = isset($_POST['redirect_url']) ? esc_url_raw(wp_unslash($_POST['redirect_url'])) : '';
+        $enabled = isset($_POST['status']) && $_POST['status'] === 'true';
+
+        if (empty($redirect_url)) {
+            wp_send_json_error(['message' => __('Redirect URL is required.', 'well-known-file-manager')]);
+        }
+
+        try {
+            // Update the redirect URL
+            $file_handler->update_redirect_url($redirect_url);
+            
+            // Update the status
+            $file_handler->update_status($enabled);
+
+            // Save to database
+            $options = get_option('wkfm_files', []);
+            $options[$file_id] = [
+                'content' => $file_handler->get_content(),
+                'status' => $enabled
+            ];
+            update_option('wkfm_files', $options);
+
+            // Clear any caches
+            if (function_exists('wp_cache_flush')) {
+                wp_cache_flush();
+            }
+
+            wp_send_json_success([
+                'message' => $enabled ? __('Redirect file enabled and saved successfully.', 'well-known-file-manager') : __('Redirect file disabled and removed successfully.', 'well-known-file-manager')
+            ]);
+        } catch (\Exception $e) {
+            wp_send_json_error([
+                'message' => __('Error saving redirect file.', 'well-known-file-manager')
+            ]);
+        }
+    }
+
+    /**
      * AJAX handler for saving well-known file content.
      *
      * @return void
@@ -664,7 +780,31 @@ class Admin {
 
         // Get default content
         $default_content = $file_handler->get_default_content();
-        wp_send_json_success(['content' => $default_content]);
+        $formatted_content = $this->format_content_for_display($default_content, $file_handler->get_content_type());
+        wp_send_json_success(['content' => $formatted_content]);
+    }
+
+
+
+    /**
+     * Formats content for display in the admin interface.
+     *
+     * @param string $content The content to format.
+     * @param string $content_type The content type.
+     * @return string The formatted content.
+     */
+    private function format_content_for_display($content, $content_type) {
+        // If content type is JSON, format it with JSON_UNESCAPED_SLASHES.
+        if (strpos($content_type, 'application/json') !== false || strpos($content_type, 'json') !== false) {
+            // Try to decode and re-encode with proper formatting.
+            $decoded = json_decode($content, true);
+            if ($decoded !== null) {
+                return json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            }
+        }
+        
+        // Return content as-is for non-JSON content types.
+        return $content;
     }
 
     /**

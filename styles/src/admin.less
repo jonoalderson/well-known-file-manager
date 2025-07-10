@@ -56,7 +56,6 @@
         opacity: 1;
 
         &.disabled {
-            opacity: 0.7;
             margin-bottom: 10px;
         }
 
@@ -389,9 +388,6 @@
         }
 
         &.disabled {
-            opacity: 0.7;
-            background: #f9f9f9;
-
             .well-known-file-header h3 {
                 color: #666;
             }
@@ -406,7 +402,6 @@
         }
 
         &.saving {
-            opacity: 0.7;
             pointer-events: none;
             
             &::after {
@@ -442,14 +437,20 @@
         }
 
         .card-notice {
-            margin-top: 8px;
+            position: absolute;
+            bottom: 20px;
+            left: 16px;
+            right: 16px;
             padding: 8px 12px;
             border-radius: 4px;
             font-size: 13px;
             z-index: 3;
             animation: slideUp 0.3s ease-out;
-            position: relative;
             padding-left: 32px;
+            padding-right: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             
             &::before {
                 content: "\f182";
@@ -472,6 +473,35 @@
                 color: #d63638;
                 border: 1px solid #d63638;
             }
+
+            .card-notice-dismiss {
+                background: none;
+                border: none;
+                color: inherit;
+                cursor: pointer;
+                padding: 8px 4px;
+                margin: 0 0 0 10px;
+                font-size: 16px;
+                line-height: 1;
+                opacity: 0.7;
+                transition: opacity 0.2s ease;
+                flex-shrink: 0;
+                width: 24px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                &:hover {
+                    opacity: 1;
+                }
+
+                &::before {
+                    content: "\f158";
+                    font-family: dashicons;
+                    font-size: 16px;
+                }
+            }
         }
 
         .well-known-file-header {
@@ -487,6 +517,7 @@
                 margin: 0;
                 font-size: 16px;
                 line-height: 1.4;
+                max-width: 300px;
 
                 .priority-icon {
                     color: #f0b849;
@@ -621,6 +652,7 @@
 
         .well-known-file-content {
             margin-top: 10px;
+            position: relative;
 
             textarea {
                 width: 100%;
@@ -637,6 +669,46 @@
                     border-color: #2271b1;
                     box-shadow: 0 0 0 1px #2271b1;
                     outline: none;
+                }
+            }
+
+            &.redirect-file {
+                .redirect-url-section {
+                    label {
+                        display: block;
+                        font-weight: 600;
+                        margin-bottom: 8px;
+                        color: #1d2327;
+                    }
+
+                    .redirect-url-input {
+                        width: 100%;
+                        padding: 8px 12px;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        font-size: 14px;
+                        line-height: 1.4;
+                        transition: border-color 0.2s ease;
+
+                        &:focus {
+                            border-color: #2271b1;
+                            box-shadow: 0 0 0 1px #2271b1;
+                            outline: none;
+                        }
+
+                        &:disabled {
+                            background-color: #f6f7f7;
+                            color: #646970;
+                            cursor: not-allowed;
+                        }
+                    }
+
+                    .description {
+                        margin-top: 8px;
+                        color: #646970;
+                        font-size: 13px;
+                        line-height: 1.4;
+                    }
                 }
             }
         }
@@ -770,9 +842,6 @@
     }
 
     &.disabled {
-        opacity: 0.7;
-        background: #f9f9f9;
-
         .well-known-file-header h3 {
             color: #666;
         }

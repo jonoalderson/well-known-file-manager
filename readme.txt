@@ -4,15 +4,19 @@ Tags: well-known, files
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 8.0
-Stable tag: 1.4.5
+Stable tag: 1.4.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Manage files in the .well-known directory with ease. Create and manage security.txt, app associations, and other standard .well-known files directly from WordPress.
+Manage files in the .well-known directory with ease.
 
 == Description ==
 
-Well-Known File Manager provides an easy-to-use interface for creating and managing various `.well-known` files that are commonly used for security verification, app associations, and other web standards.
+Manage your website's `.well-known` files with ease using this powerful yet simple plugin. The Well-Known File Manager provides a user-friendly interface to create, edit and manage standardized `.well-known` files - essential components for modern web security, app associations, and service discovery.
+
+Whether you need to implement security.txt for vulnerability reporting, configure app associations, or set up protocol handlers, this plugin handles the technical complexities while giving you complete control. It creates actual files on your server for maximum compatibility and performance, without requiring any special server configuration or technical knowledge.
+
+Perfect for developers, site owners, and administrators who want a reliable way to manage their site's `.well-known` directory through a clean, intuitive WordPress interface.
 
 **Key Features:**
 
@@ -23,6 +27,7 @@ Well-Known File Manager provides an easy-to-use interface for creating and manag
 * **Validation**: Content validation to ensure files meet required standards
 * **Priority Files**: Highlighted support for important files like `security.txt`, `assetlinks.json`, and `apple-app-site-association`
 * **Automatic Cleanup**: Removes files when disabled to keep your server clean
+* **Data Preservation**: Files and settings are preserved when the plugin is deactivated or uninstalled
 
 **Supported Files:**
 
@@ -49,6 +54,7 @@ This plugin takes a **physical file approach** rather than routing requests thro
 * **Simplified Setup**: No need to configure rewrite rules or server settings
 * **Automatic Management**: Files are created and removed automatically based on your settings
 * **Clean Server**: Disabled files are completely removed from your server
+* **Data Safety**: Your files and settings remain intact when deactivating or uninstalling the plugin
 
 == Installation ==
 
@@ -72,7 +78,7 @@ Yes! The plugin works with any standard WordPress hosting environment. Since it 
 
 = What happens to my .well-known files when I deactivate the plugin? =
 
-When deactivated, the plugin will remove all `.well-known` files it created. Your settings and file contents are preserved in the database, so reactivating the plugin will restore your configuration.
+**Your .well-known files are NOT deleted when you deactivate or uninstall the plugin.** The plugin preserves all your files and settings in the database. When you reactivate the plugin, your configuration will be restored exactly as it was. This ensures your important .well-known files remain accessible even if you temporarily deactivate the plugin.
 
 = Can I use this plugin with a caching plugin? =
 
@@ -86,6 +92,20 @@ Yes! The plugin is designed to work with WordPress caching plugins. Since files 
 
 == Changelog ==
 
+= 1.4.7 (29/06/2025) =
+* FEATURE: 
+* FEATURE: Added a link to the settings from the plugins page (props @tacoverdo and @westonruter).
+* BUGFIX: Fixed some layout shift issues (props @westonruter). 
+* BUGFIX: Improve JSON rendering (props @westonruter). 
+* BUGFIX: Reworked how 'disabled' files look and behave to improve accessibility (props @westonruter).
+* BUGFIX: Change activation/deactivation methods to static functions (props @tacoverdo).
+
+= 1.4.6 (29/06/2025) =
+* BUGFIX: Tweaked some plugin headers.
+
+= 1.4.5 (28/06/2025) =
+* BUGFIX: Harden against some edge cases with malformed URLs.
+
 = 1.4.2 =
 * **Major Change**: Switched to physical file creation approach
 * Removed .htaccess dependency and complexity
@@ -93,6 +113,7 @@ Yes! The plugin is designed to work with WordPress caching plugins. Since files 
 * Improved compatibility across all hosting environments
 * Simplified setup process
 * Added automatic cleanup on plugin deactivation
+* **Important**: Files are preserved when plugin is deactivated/uninstalled
 
 = 1.4.1 =
 * Fixed plugin action links not showing
@@ -128,11 +149,3 @@ Yes! The plugin is designed to work with WordPress caching plugins. Since files 
 * Basic .well-known file management
 * Admin interface
 * Core functionality
-
-== Upgrade Notice ==
-
-= 1.4.5 =
-BUGFIX: Harden against some edge cases with malformed URLs.
-
-= 1.4.3 =
-This is a major update that changes how the plugin works. The plugin now creates physical files instead of using .htaccess routing. This provides better compatibility and performance across all hosting environments. No manual configuration required!

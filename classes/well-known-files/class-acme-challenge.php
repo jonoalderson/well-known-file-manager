@@ -20,7 +20,7 @@ class Acme_Challenge extends Well_Known_File {
     }
 
     public function get_description() {
-        return __('Used for ACME (Automatic Certificate Management Environment) challenges during SSL/TLS certificate issuance.', 'well-known-file-manager');
+        return __('Used for ACME challenges during SSL/TLS certificate issuance.', 'well-known-file-manager');
     }
 
 }

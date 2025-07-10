@@ -1,19 +1,19 @@
 <?php
 /**
- * Edge Images - Manage files in the .well-known folder..
+ * Well-Known File Manager - Manage files in the .well-known directory.
  *
- * @package   Edge_Images
+ * @package   Well_Known_File_Manager
  * @author    Jono Alderson <https://www.jonoalderson.com/>
  * @license   GPL-2.0-or-later
  * @link      https://github.com/jonoalderson/well-known-file-manager/
  * @since     1.0.0
- * @version   1.4.5
+ * @version   1.4.7
  *
  * @wordpress-plugin
  * Plugin Name:       Well-Known File Manager
  * Plugin URI:        https://github.com/jonoalderson/well-known-file-manager/
- * Description:       Manage files in the .well-known folder.
- * Version:           1.4.5
+ * Description:       Manage files in the .well-known directory with ease.
+ * Version:           1.4.7
  * Requires PHP:      7.4
  * Requires at least: 5.6
  * Tested up to:      6.8
@@ -72,7 +72,7 @@ class Plugin {
      * @return void
      */
     private function define_constants() : void {
-        define('WELL_KNOWN_FILE_MANAGER_VERSION', '1.4.5');
+        define('WELL_KNOWN_FILE_MANAGER_VERSION', '1.4.7');
         define('WELL_KNOWN_FILE_MANAGER_FILE', __FILE__);
         define('WELL_KNOWN_FILE_MANAGER_DIR', __DIR__);
     }
@@ -83,11 +83,11 @@ class Plugin {
      * @return void
      */
     private function register_hooks() : void {
-        register_activation_hook(WELL_KNOWN_FILE_MANAGER_FILE, [$this, 'activate']);
-        register_uninstall_hook(WELL_KNOWN_FILE_MANAGER_FILE, [$this, 'deactivate']);
+        register_activation_hook(WELL_KNOWN_FILE_MANAGER_FILE, [self::class, 'activate']);
+        register_uninstall_hook(WELL_KNOWN_FILE_MANAGER_FILE, [self::class, 'deactivate']);
         
-        // Register plugin action links early in the process.
-        add_filter('plugin_action_links_well-known-file-manager.php', [$this->admin, 'add_plugin_action_links']);
+        // Register plugin action links.
+        add_filter('plugin_action_links_' . plugin_basename(WELL_KNOWN_FILE_MANAGER_FILE), [$this->admin, 'add_plugin_action_links']);
     }
 
     /**
@@ -95,9 +95,9 @@ class Plugin {
      *
      * @return void
      */
-    public function deactivate() : void {
+    public static function deactivate() : void {
         // Clean up any physical files created by the plugin
-        $this->cleanup_physical_files();
+        self::cleanup_physical_files();
     }
 
     /**
@@ -105,9 +105,9 @@ class Plugin {
      *
      * @return void
      */
-    public function activate() : void {
+    public static function activate() : void {
         // Create .well-known directory if it doesn't exist
-        $well_known_dir = \get_home_path() . '.well-known';
+        $well_known_dir = \WellKnownFileManager\Helpers::get_web_root_path() . '.well-known';
         if (!\is_dir($well_known_dir)) {
             \wp_mkdir_p($well_known_dir);
         }
@@ -118,8 +118,8 @@ class Plugin {
      *
      * @return void
      */
-    private function cleanup_physical_files() : void {
-        $well_known_dir = \get_home_path() . '.well-known';
+    private static function cleanup_physical_files() : void {
+        $well_known_dir = \WellKnownFileManager\Helpers::get_web_root_path() . '.well-known';
         
         if (\is_dir($well_known_dir)) {
             $files = \glob($well_known_dir . '/*');
@@ -143,7 +143,7 @@ class Plugin {
      */
     public static function get_well_known_files() : array {
         $files = [];
-        $classes = self::get_well_known_file_classes();
+        $classes = \WellKnownFileManager\Helpers::get_well_known_file_classes();
         
         foreach ($classes as $class_name) {
             $instance = new $class_name();
