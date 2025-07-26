@@ -7,16 +7,16 @@
  * @license   GPL-2.0-or-later
  * @link      https://github.com/jonoalderson/well-known-file-manager/
  * @since     1.0.0
- * @version   1.4.8
+ * @version   1.4.9
  *
  * @wordpress-plugin
  * Plugin Name:       Well-Known File Manager
  * Plugin URI:        https://github.com/jonoalderson/well-known-file-manager/
  * Description:       Manage files in the .well-known directory with ease.
- * Version:           1.4.8
+ * Version:           1.4.9
  * Requires PHP:      7.4
  * Requires at least: 5.6
- * Tested up to:      6.8
+ * Tested up to:      6.8.2
  * Author:            Jono Alderson
  * Author URI:        https://www.jonoalderson.com/
  * Text Domain:       well-known-file-manager
@@ -72,7 +72,7 @@ class Plugin {
      * @return void
      */
     private function define_constants() : void {
-        define('WELL_KNOWN_FILE_MANAGER_VERSION', '1.4.8');
+        define('WELL_KNOWN_FILE_MANAGER_VERSION', '1.4.9');
         define('WELL_KNOWN_FILE_MANAGER_FILE', __FILE__);
         define('WELL_KNOWN_FILE_MANAGER_DIR', __DIR__);
     }

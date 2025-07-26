@@ -4,9 +4,9 @@ namespace WellKnownFileManager\WellKnownFiles;
 
 use WellKnownFileManager\Well_Known_File;
 
-class Matrix extends Well_Known_File {
+class Matrix_Server extends Well_Known_File {
 
-    const FILENAME = "matrix";
+    const FILENAME = "matrix/server";
     const CONTENT_TYPE = "application/json";
 
     public function get_default_content() {
@@ -16,7 +16,7 @@ class Matrix extends Well_Known_File {
     }
     
     public function get_description() {
-        return __("Provides information for Matrix protocol server discovery.", 'well-known-file-manager');
+        return __("Provides Matrix server delegation information for federation traffic routing. Used when your homeserver is not accessible on the default federation port (8448) or domain.", 'well-known-file-manager');
     }
     
 }

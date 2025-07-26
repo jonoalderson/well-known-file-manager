@@ -2,9 +2,9 @@
 Contributors: jonoaldersonwp
 Tags: well-known, files
 Requires at least: 6.0
-Tested up to: 6.8
+Tested up to: 6.8.2
 Requires PHP: 8.0
-Stable tag: 1.4.8
+Stable tag: 1.4.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,8 +92,11 @@ Yes! The plugin is designed to work with WordPress caching plugins. Since files 
 
 == Changelog ==
 
+= 1.4.9 (26/07/2025) =
+* BUGFIX: Corrected the URL of the Matrix server file (and added support for a separate Matrix client file) (props https://github.com/ZeroEcks).
+
 = 1.4.8 (10/07/2025) =
-*BUGFIX: Saving the 'change-password' file would not show a notification.
+* BUGFIX: Saving the 'change-password' file would not show a notification.
 
 = 1.4.7 (10/07/2025) =
 * FEATURE: Make the 'change-password' file redirect to the appropriate (or user-defined) URL (props @westonruter).
