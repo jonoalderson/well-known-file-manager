@@ -2,6 +2,8 @@
 
 A WordPress plugin for managing files in the `.well-known` directory. This plugin provides an easy-to-use interface for creating and managing various `.well-known` files that are commonly used for security verification, app associations, and other web standards.
 
+NOTE: This plugin won't work on hosting environments and setups which disallow writing to / editing files in the `.well-known` directory (including sites hosted on wordpress.com). 
+
 ## Features
 
 - **Easy Management**: Simple toggle switches to enable/disable `.well-known` files
