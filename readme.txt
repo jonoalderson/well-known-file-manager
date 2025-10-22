@@ -18,6 +18,8 @@ Whether you need to implement security.txt for vulnerability reporting, configur
 
 Perfect for developers, site owners, and administrators who want a reliable way to manage their site's `.well-known` directory through a clean, intuitive WordPress interface.
 
+**WARNING:** This plugin won't work on hosting environments and setups which disallow writing to / editing files in the `.well-known` directory (including sites hosted on wordpress.com). 
+
 **Key Features:**
 
 * **Easy Management**: Simple toggle switches to enable/disable `.well-known` files
