@@ -12,6 +12,10 @@ namespace WellKnownFileManager;
  */
 abstract class Well_Known_File {
 
+    const MODE_DISABLED = 'disabled';
+    const MODE_ENABLED  = 'enabled';
+    const MODE_MASKED   = 'masked';
+
     /**
      * The filename for the file.
      *
@@ -224,32 +228,72 @@ abstract class Well_Known_File {
     }
 
     /**
-     * Get the status of a file
+     * Normalize a stored status value to a file mode.
+     *
+     * @param mixed $stored Raw value from the database.
+     * @return string One of MODE_DISABLED, MODE_ENABLED, or MODE_MASKED.
      */
-    public function get_status() : bool {
-        // Get the options.
+    public static function normalize_mode( $stored ) : string {
+        if ($stored === true || $stored === 'enabled' || $stored === '1' || $stored === 1) {
+            return self::MODE_ENABLED;
+        }
+        if ($stored === self::MODE_MASKED || $stored === 'masked') {
+            return self::MODE_MASKED;
+        }
+
+        return self::MODE_DISABLED;
+    }
+
+    /**
+     * Get the mode of this file.
+     *
+     * @return string One of MODE_DISABLED, MODE_ENABLED, or MODE_MASKED.
+     */
+    public function get_mode() : string {
         $options = get_option('wkfm_files');
 
-        // If we didn't get any options, return false.
         if (!$options) {
-            return false;
+            return self::MODE_DISABLED;
         }
 
-        // Get the class name without the namespace.
         $class_name = (new \ReflectionClass($this))->getShortName();
 
-        // If we didn't find an entry for this specific file, return false.
-        if (!isset($options[$class_name])) {
-            return false;
-        }
-
-        // If the file doesn't have a status property, return false.
         if (!isset($options[$class_name]['status'])) {
+            return self::MODE_DISABLED;
+        }
+
+        return self::normalize_mode($options[$class_name]['status']);
+    }
+
+    /**
+     * Whether this file is enabled (served and written to disk).
+     */
+    public function get_status() : bool {
+        return $this->get_mode() === self::MODE_ENABLED;
+    }
+
+    /**
+     * Update the mode of the file.
+     *
+     * @param string $mode One of MODE_DISABLED, MODE_ENABLED, or MODE_MASKED.
+     * @return bool Whether the update was successful.
+     */
+    public function update_mode( string $mode ) : bool {
+        $allowed = [self::MODE_DISABLED, self::MODE_ENABLED, self::MODE_MASKED];
+        if (!in_array($mode, $allowed, true)) {
             return false;
         }
 
-        // Return the status.
-        return $options[$class_name]['status'];
+        $options = get_option('wkfm_files', []);
+        $class_name = (new \ReflectionClass($this))->getShortName();
+
+        if (!isset($options[$class_name])) {
+            $options[$class_name] = [];
+        }
+
+        $options[$class_name]['status'] = $mode;
+
+        return update_option('wkfm_files', $options);
     }
 
     /**
@@ -257,24 +301,10 @@ abstract class Well_Known_File {
      *
      * @param bool $status Whether the file is enabled.
      * @return bool Whether the update was successful.
+     * @deprecated Use update_mode() instead.
      */
     public function update_status( bool $status ) : bool {
-        // Get the current options.
-        $options = get_option('wkfm_files', []);
-
-        // Get the class name without the namespace.
-        $class_name = (new \ReflectionClass($this))->getShortName();
-
-        // Initialize the file's options if they don't exist.
-        if (!isset($options[$class_name])) {
-            $options[$class_name] = [];
-        }
-
-        // Update the status.
-        $options[$class_name]['status'] = $status;
-
-        // Save the options.
-        return update_option('wkfm_files', $options);
+        return $this->update_mode($status ? self::MODE_ENABLED : self::MODE_DISABLED);
     }
 
     /**

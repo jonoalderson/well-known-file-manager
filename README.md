@@ -6,7 +6,7 @@ A WordPress plugin for managing files in the `.well-known` directory. This plugi
 
 ## Features
 
-- **Easy Management**: Simple toggle switches to enable/disable `.well-known` files
+- **Easy Management**: Per-file modes — disabled, enabled, or masked (404)
 - **Physical File Creation**: Creates actual files in the `.well-known` directory for maximum compatibility
 - **Content Editing**: Built-in content editor for each file type with syntax highlighting
 - **Default Templates**: Pre-configured templates for common `.well-known` files
@@ -33,18 +33,19 @@ The plugin supports a wide range of `.well-known` files, including:
 
 ## Usage
 
-1. **Enable Files**: Use the toggle switches to enable the `.well-known` files you need
-2. **Edit Content**: Click the "Save" button to edit the content of each file
-3. **Restore Defaults**: Use the "Restore Default" button to reset content to recommended defaults
-4. **Automatic Creation**: When enabled, files are automatically created in your `.well-known` directory
-5. **Automatic Cleanup**: When disabled, files are automatically removed from your server
+1. **Choose a mode**: **Enabled** serves your content and writes a physical file; **Disabled** does not touch the URL (other plugins can serve it); **Masked** removes the physical file and returns 404 for that filename via WordPress
+2. **Edit Content**: Click "Save" to store content (only when enabled)
+3. **Restore Defaults**: Use "Restore Default" to reset content to recommended defaults
+4. **Automatic Creation**: Enabled files are created in your `.well-known` directory
+5. **Automatic Cleanup**: Disabled and masked files are removed from disk
 
 ## How It Works
 
 This plugin takes a **physical file approach** rather than routing requests through WordPress:
 
 - **When Enabled**: Creates actual files in your `.well-known` directory
-- **When Disabled**: Removes the files from your server
+- **When Disabled**: Does not serve or block the URL; other plugins and static files can respond
+- **When Masked**: Removes the file from disk and answers with 404 when WordPress handles the request
 - **No Server Configuration**: Works on any hosting setup without requiring `.htaccess` modifications
 - **Maximum Compatibility**: Files are served directly by your web server for optimal performance
 
@@ -69,6 +70,11 @@ For support, feature requests, or bug reports, please visit the plugin's GitHub 
 This plugin is licensed under the GPL v2 or later.
 
 ## Changelog
+
+### Unreleased
+- Add disabled, enabled, and masked modes per well-known file
+- Stop intercepting unknown `.well-known` URLs so other plugins (e.g. MCP) can serve them
+- Replace enable/disable toggles with a mode selector in the admin UI
 
 ### 1.4.2
 - **Major Change**: Switched to physical file creation approach

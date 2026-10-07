@@ -161,17 +161,21 @@ class Handler {
             return;
         }
         
-        // Get an instance of the file.
-        $instance = Helpers::get_well_known_file($path);
+        // Only handle direct .well-known/{filename} URLs that this plugin knows about.
+        $instance = Helpers::get_well_known_file_for_path($path);
 
-        // Serve a 404 if no matching file was found.
         if (!$instance) {
-            Helpers::serve_404();
+            return;
         }
 
-        // Serve a 404 if the file is not enabled.
-        if ($instance->get_status() === false) {
-            Helpers::serve_404();
+        $mode = $instance->get_mode();
+
+        if ($mode === Well_Known_File::MODE_DISABLED) {
+            return;
+        }
+
+        if ($mode === Well_Known_File::MODE_MASKED) {
+            Helpers::serve_404(true);
         }
 
         // Check if this is a redirect file - don't cache redirects

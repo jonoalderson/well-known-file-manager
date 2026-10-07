@@ -72,7 +72,9 @@ class Helpers {
             // Add it to our array.
             $well_known_files[$class_name_trimmed] = [
                 'filename' => $instance::FILENAME,
-                'status' => isset($saved_files[$class_name_trimmed]['status']) ? $saved_files[$class_name_trimmed]['status'] : false
+                'status' => isset($saved_files[$class_name_trimmed]['status'])
+                    ? Well_Known_File::normalize_mode($saved_files[$class_name_trimmed]['status'])
+                    : Well_Known_File::MODE_DISABLED,
             ];
         }
 
@@ -216,6 +218,45 @@ class Helpers {
     }
 
     /**
+     * Extract the well-known filename from a request path (single segment only).
+     *
+     * @param string $path Request path.
+     * @return string|null Filename or null if not a direct .well-known file URL.
+     */
+    public static function parse_well_known_request_filename( string $path ) : ?string {
+        $path = rtrim($path, '/');
+        if ($path === '') {
+            return null;
+        }
+
+        if (!preg_match('#\.well-known/([^/]+)$#', $path, $matches)) {
+            return null;
+        }
+
+        $filename = $matches[1];
+        if ($filename === '' || $filename === '.' || $filename === '..') {
+            return null;
+        }
+
+        return $filename;
+    }
+
+    /**
+     * Get a well-known file instance for a request path, or null if the path is not managed.
+     *
+     * @param string $path Request path.
+     * @return Well_Known_File|false
+     */
+    public static function get_well_known_file_for_path( string $path ) {
+        $filename = self::parse_well_known_request_filename($path);
+        if ($filename === null) {
+            return false;
+        }
+
+        return self::get_well_known_file($filename);
+    }
+
+    /**
      * Get the cleaned URL path
      * 
      * @return string The cleaned URL path
@@ -237,10 +278,14 @@ class Helpers {
      * 
      * @return void
      */
-    public static function serve_404() : void {
+    public static function serve_404( bool $no_store = false ) : void {
         header('HTTP/1.1 404 Not Found');
         header('Content-Type: text/plain');
-        header('Cache-Control: max-age=3600, public');
+        if ($no_store) {
+            header('Cache-Control: no-store');
+        } else {
+            header('Cache-Control: max-age=3600, public');
+        }
         header('x-robots-tag: noindex');
         exit();
     }

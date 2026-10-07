@@ -153,8 +153,9 @@ class Admin {
                 continue;
             }
 
+            $raw_status = isset($data['status']) ? $data['status'] : Well_Known_File::MODE_DISABLED;
             $sanitized[$class_name] = [
-                'status' => isset($data['status']) ? (bool) $data['status'] : false
+                'status' => Well_Known_File::normalize_mode($raw_status),
             ];
         }
 
@@ -300,34 +301,39 @@ class Admin {
             $short_class_name = (new \ReflectionClass($instance))->getShortName();
             $filename = $instance->get_filename();
             
-            // Check if file is enabled in database
-            $is_enabled_in_db = isset($options[$short_class_name]['status']) && $options[$short_class_name]['status'];
-            
+            $mode = $instance->get_mode();
+            $has_stored_mode = isset($options[$short_class_name]['status']);
+            $is_enabled_in_db = $mode === Well_Known_File::MODE_ENABLED;
+
             // Check if physical file exists
             $physical_file_exists = $instance->physical_file_exists();
-            
+
             // Check for sync issues (only for content files)
             if ($instance->get_file_type() === 'content') {
                 if ($is_enabled_in_db && !$physical_file_exists) {
                     // File should exist but doesn't - auto-create it
                     $content = isset($options[$short_class_name]['content']) ? $options[$short_class_name]['content'] : $instance->get_content();
-                    
+
                     $success = $instance->create_or_update_physical_file($content);
-                    
+
                     if ($success) {
                         $created_files[] = $filename;
                     }
                 } elseif (!$is_enabled_in_db && $physical_file_exists) {
-                    // File shouldn't exist but does - auto-fix by enabling
-                    $auto_fixes[] = $short_class_name;
-                    
-                    // Update database to match physical state
-                    if (!isset($options[$short_class_name])) {
-                        $options[$short_class_name] = [];
+                    if (!$has_stored_mode) {
+                        // No stored mode: disk-only install — auto-enable to match physical file.
+                        $auto_fixes[] = $short_class_name;
+
+                        if (!isset($options[$short_class_name])) {
+                            $options[$short_class_name] = [];
+                        }
+                        $options[$short_class_name]['status'] = Well_Known_File::MODE_ENABLED;
+                        $options[$short_class_name]['content'] = $instance->get_content();
+                        $options[$short_class_name]['response_code'] = 200;
+                    } else {
+                        // Disabled or masked: remove stray physical file.
+                        $instance->delete_physical_file();
                     }
-                    $options[$short_class_name]['status'] = true;
-                    $options[$short_class_name]['content'] = $instance->get_content();
-                    $options[$short_class_name]['response_code'] = 200;
                 }
             }
         }
@@ -350,7 +356,7 @@ class Admin {
      */
     private function render_files_options() : void {
         echo '<section id="well-known-files">';
-        echo '<p class="section-description">' . esc_html__('Enable and configure the .well-known files you want to use on your site. Each file serves a specific purpose and may be required by different services or applications.', 'well-known-file-manager') . '</p>';
+        echo '<p class="section-description">' . esc_html__('Configure each .well-known file: Enabled serves your content, Disabled leaves the URL to other plugins or the server, and Masked returns 404 for that filename through WordPress.', 'well-known-file-manager') . '</p>';
         echo '<div class="well-known-files-grid">';
 
         // Get all file classes
@@ -411,7 +417,8 @@ class Admin {
         $filename = $instance->get_filename();
         $description = $instance->get_description();
         $content = $instance->get_content();
-        $status = $instance->get_status();
+        $mode = $instance->get_mode();
+        $is_enabled = $instance->get_status();
         $content_type = $instance->get_content_type();
 
         // Get the short class name for the form field.
@@ -421,8 +428,11 @@ class Admin {
         $options = get_option('wkfm_files', []);
 
         $card_class = 'well-known-file-card';
-        if (!$status) {
+        if (!$is_enabled) {
             $card_class .= ' disabled';
+        }
+        if ($mode === Well_Known_File::MODE_MASKED) {
+            $card_class .= ' masked';
         }
         if ($is_priority) {
             $card_class .= ' priority';
@@ -437,14 +447,18 @@ class Admin {
         }
         echo '</h3>';
         echo '<div class="well-known-file-actions">';
-        echo '<label class="switch">';
-        echo '<input type="checkbox" class="well-known-file-toggle" ' . checked($status, true, false) . ' data-file-id="' . esc_attr($short_class_name) . '">';
-        echo '<span class="slider round"></span>';
+        echo '<label class="well-known-file-mode-label">';
+        echo '<span class="screen-reader-text">' . esc_html__('File mode', 'well-known-file-manager') . '</span>';
+        echo '<select class="well-known-file-mode" data-file-id="' . esc_attr($short_class_name) . '">';
+        echo '<option value="disabled"' . selected($mode, Well_Known_File::MODE_DISABLED, false) . '>' . esc_html__('Disabled', 'well-known-file-manager') . '</option>';
+        echo '<option value="enabled"' . selected($mode, Well_Known_File::MODE_ENABLED, false) . '>' . esc_html__('Enabled', 'well-known-file-manager') . '</option>';
+        echo '<option value="masked"' . selected($mode, Well_Known_File::MODE_MASKED, false) . '>' . esc_html__('Masked', 'well-known-file-manager') . '</option>';
+        echo '</select>';
         echo '</label>';
-        echo '<button type="button" class="button restore-default-content" data-file-id="' . esc_attr($short_class_name) . '" ' . disabled(!$status, true, false) . '>';
+        echo '<button type="button" class="button restore-default-content" data-file-id="' . esc_attr($short_class_name) . '" ' . disabled(!$is_enabled, true, false) . '>';
         echo esc_html__('Restore Default', 'well-known-file-manager');
         echo '</button>';
-        echo '<button type="button" class="button save-file-content" data-file-id="' . esc_attr($short_class_name) . '" ' . disabled(!$status, true, false) . '>';
+        echo '<button type="button" class="button save-file-content" data-file-id="' . esc_attr($short_class_name) . '" ' . disabled(!$is_enabled, true, false) . '>';
         echo esc_html__('Save', 'well-known-file-manager');
         echo '</button>';
         echo '</div>';
@@ -452,7 +466,7 @@ class Admin {
         echo '<p class="description">' . esc_html($description) . '</p>';
 
         // Only check for physical file differences for content files
-        if ($instance->get_file_type() === 'content' && $status && $instance->physical_file_exists()) {
+        if ($instance->get_file_type() === 'content' && $is_enabled && $instance->physical_file_exists()) {
             $physical_content = $instance->get_physical_file_content();
             $db_content = get_option($instance->get_option_name());
             
@@ -469,10 +483,10 @@ class Admin {
 
         // Check if this is a redirect file.
         if ($instance->get_file_type() === 'redirect') {
-            $this->render_redirect_file_content($instance, $status);
+            $this->render_redirect_file_content($instance, $is_enabled);
         } else {
             echo '<div class="well-known-file-content">';
-            echo '<textarea ' . disabled(!$status, true, false) . '>' . esc_textarea($instance->get_formatted_content()) . '</textarea>';
+            echo '<textarea ' . disabled(!$is_enabled, true, false) . '>' . esc_textarea($instance->get_formatted_content()) . '</textarea>';
             echo '</div>';
         }
         echo '</div>';
@@ -525,7 +539,7 @@ class Admin {
         $files_to_save = [];
 
         foreach ($files as $filename => $file_data) {
-            $status = isset($file_data['status']) ? (bool) $file_data['status'] : false;
+            $mode = isset($file_data['status']) ? Well_Known_File::normalize_mode($file_data['status']) : Well_Known_File::MODE_DISABLED;
             $content = isset($file_data['content']) ? wp_unslash($file_data['content']) : '';
 
             // Get the class name and create an instance.
@@ -538,7 +552,7 @@ class Admin {
             $file->update_content($content);
 
             $files_to_save[$filename] = [
-                'status' => $status,
+                'status' => $mode,
                 'content' => $content,
             ];
         }
@@ -563,6 +577,43 @@ class Admin {
     public function purge_cache_on_update($old_value, $value, $option) {
         // Flush only our cache group to avoid affecting other plugins.
         wp_cache_flush_group(Plugin::CACHE_GROUP);
+    }
+
+    /**
+     * Sanitize a file mode from request input.
+     *
+     * @param mixed $raw Raw status/mode from the request.
+     * @return string
+     */
+    private function sanitize_request_mode( $raw ) : string {
+        if ($raw === 'true' || $raw === true) {
+            return Well_Known_File::MODE_ENABLED;
+        }
+        if ($raw === 'false' || $raw === false) {
+            return Well_Known_File::MODE_DISABLED;
+        }
+
+        return Well_Known_File::normalize_mode($raw);
+    }
+
+    /**
+     * Create or remove the physical file based on mode.
+     *
+     * @param Well_Known_File $file File instance.
+     * @param string          $mode File mode.
+     * @param string          $content Content to write when enabling.
+     * @return bool True on success, false if enabling failed to write the file.
+     */
+    private function sync_physical_file_for_mode( Well_Known_File $file, string $mode, string $content = '' ) : bool {
+        if ($mode === Well_Known_File::MODE_ENABLED) {
+            if ($content === '') {
+                $content = $file->get_content();
+            }
+            return $file->create_or_update_physical_file($content);
+        }
+
+        $file->delete_physical_file();
+        return true;
     }
 
     /**
@@ -593,9 +644,9 @@ class Admin {
             // Get content
             $content = isset($_POST['content']) ? sanitize_textarea_field(wp_unslash($_POST['content'])) : '';
             
-            // Get enabled state
-            $enabled = isset($_POST['enabled']) ? filter_var(wp_unslash($_POST['enabled']), FILTER_VALIDATE_BOOLEAN) : false;
-            
+            $raw_mode = isset($_POST['mode']) ? wp_unslash($_POST['mode']) : (isset($_POST['enabled']) ? wp_unslash($_POST['enabled']) : Well_Known_File::MODE_DISABLED);
+            $mode = $this->sanitize_request_mode(sanitize_text_field($raw_mode));
+
             // Get the class name
             $class_name = Helpers::convert_filename_to_class_name($file_id);
             
@@ -607,10 +658,16 @@ class Admin {
             // Create instance and update content
             $file = new $class_name();
             $file->update_content($content);
-            $file->update_status($enabled);
+            $file->update_mode($mode);
+
+            if (!$this->sync_physical_file_for_mode($file, $mode, $content)) {
+                wp_send_json_error(['message' => __('Failed to create physical file. Please check file permissions.', 'well-known-file-manager')]);
+                return;
+            }
             
             wp_send_json_success([
-                'message' => __('File saved successfully.', 'well-known-file-manager')
+                'message' => __('File saved successfully.', 'well-known-file-manager'),
+                'mode' => $mode,
             ]);
             
         } catch (\Exception $e) {
@@ -653,9 +710,10 @@ class Admin {
             wp_send_json_error(['message' => __('This file is not a redirect file.', 'well-known-file-manager')]);
         }
 
-        // Get redirect URL and status
+        // Get redirect URL and mode
         $redirect_url = isset($_POST['redirect_url']) ? esc_url_raw(wp_unslash($_POST['redirect_url'])) : '';
-        $enabled = isset($_POST['status']) && $_POST['status'] === 'true';
+        $raw_mode = isset($_POST['status']) ? wp_unslash($_POST['status']) : Well_Known_File::MODE_DISABLED;
+        $mode = $this->sanitize_request_mode(sanitize_text_field($raw_mode));
 
         if (empty($redirect_url)) {
             wp_send_json_error(['message' => __('Redirect URL is required.', 'well-known-file-manager')]);
@@ -665,24 +723,32 @@ class Admin {
             // Update the redirect URL
             $file_handler->update_redirect_url($redirect_url);
             
-            // Update the status
-            $file_handler->update_status($enabled);
+            $file_handler->update_mode($mode);
 
             // Save to database
             $options = get_option('wkfm_files', []);
             $options[$file_id] = [
                 'content' => $file_handler->get_content(),
-                'status' => $enabled
+                'status' => $mode,
             ];
             update_option('wkfm_files', $options);
+
+            $this->sync_physical_file_for_mode($file_handler, $mode);
 
             // Clear any caches
             if (function_exists('wp_cache_flush')) {
                 wp_cache_flush();
             }
 
+            $messages = [
+                Well_Known_File::MODE_ENABLED => __('Redirect file enabled and saved successfully.', 'well-known-file-manager'),
+                Well_Known_File::MODE_DISABLED => __('Redirect file disabled and removed successfully.', 'well-known-file-manager'),
+                Well_Known_File::MODE_MASKED => __('Redirect file masked successfully.', 'well-known-file-manager'),
+            ];
+
             wp_send_json_success([
-                'message' => $enabled ? __('Redirect file enabled and saved successfully.', 'well-known-file-manager') : __('Redirect file disabled and removed successfully.', 'well-known-file-manager')
+                'message' => $messages[$mode],
+                'mode' => $mode,
             ]);
         } catch (\Exception $e) {
             wp_send_json_error([
@@ -719,30 +785,25 @@ class Admin {
             wp_send_json_error(['message' => __('Invalid file ID.', 'well-known-file-manager')]);
         }
 
-        // Get content and status
+        // Get content and mode
         $content = isset($_POST['content']) ? wp_unslash($_POST['content']) : '';
-        $enabled = isset($_POST['status']) && $_POST['status'] === 'true';
+        $raw_mode = isset($_POST['status']) ? wp_unslash($_POST['status']) : Well_Known_File::MODE_DISABLED;
+        $mode = $this->sanitize_request_mode(sanitize_text_field($raw_mode));
         $response_code = isset($_POST['response_code']) ? intval($_POST['response_code']) : 200;
 
         // Save to database
         $options = get_option('wkfm_files', []);
         $options[$file_id] = [
             'content' => $content,
-            'status' => $enabled,
+            'status' => $mode,
             'response_code' => $response_code
         ];
         update_option('wkfm_files', $options);
 
-        // Handle physical file creation/deletion
-        if ($enabled) {
-            // Create or update the physical file
-            $success = $file_handler->create_or_update_physical_file($content);
-            if (!$success) {
-                wp_send_json_error(['message' => __('Failed to create physical file. Please check file permissions.', 'well-known-file-manager')]);
-            }
-        } else {
-            // Delete the physical file
-            $file_handler->delete_physical_file();
+        $file_handler->update_mode($mode);
+
+        if (!$this->sync_physical_file_for_mode($file_handler, $mode, $content)) {
+            wp_send_json_error(['message' => __('Failed to create physical file. Please check file permissions.', 'well-known-file-manager')]);
         }
 
         // Clear any caches
@@ -750,8 +811,15 @@ class Admin {
             wp_cache_flush();
         }
 
+        $messages = [
+            Well_Known_File::MODE_ENABLED => __('File enabled and saved successfully.', 'well-known-file-manager'),
+            Well_Known_File::MODE_DISABLED => __('File disabled and removed successfully.', 'well-known-file-manager'),
+            Well_Known_File::MODE_MASKED => __('File masked successfully.', 'well-known-file-manager'),
+        ];
+
         wp_send_json_success([
-            'message' => $enabled ? __('File enabled and saved successfully.', 'well-known-file-manager') : __('File disabled and removed successfully.', 'well-known-file-manager')
+            'message' => $messages[$mode],
+            'mode' => $mode,
         ]);
     }
 

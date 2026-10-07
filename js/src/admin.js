@@ -13,7 +13,7 @@
         },
 
         bindEvents() {
-            $('.well-known-file-toggle').on('change', this.handleToggle.bind(this));
+            $('.well-known-file-mode').on('change', this.handleModeChange.bind(this));
             $('.save-file-content').on('click', this.handleSave.bind(this));
             $('.restore-default-content').on('click', this.handleRestore.bind(this));
             $('.well-known-file-content textarea').on('input', this.handleContentChange.bind(this));
@@ -98,10 +98,32 @@
             }, 3000);
         },
 
+        isModeEnabled(mode) {
+            return mode === 'enabled';
+        },
+
+        applyCardModeUi($card, mode) {
+            const enabled = this.isModeEnabled(mode);
+            const $content = $card.find('.well-known-file-content textarea');
+            const $redirectInput = $card.find('.redirect-url-input');
+            const $buttons = $card.find('.button');
+
+            $card.toggleClass('disabled', !enabled);
+            $card.toggleClass('masked', mode === 'masked');
+
+            $content.prop('disabled', !enabled);
+            $redirectInput.prop('disabled', !enabled);
+            $buttons.prop('disabled', !enabled);
+        },
+
+        getCardMode($card) {
+            return $card.find('.well-known-file-mode').val() || 'disabled';
+        },
+
         handleSave(e) {
             const $button = $(e.target).closest('.save-file-content');
             const $card = $button.closest('.well-known-file-card');
-            const $toggle = $card.find('.well-known-file-toggle');
+            const mode = this.getCardMode($card);
             const $responseCode = $card.find('.well-known-file-response-code-input');
             const fileId = $card.data('file-id');
             
@@ -119,7 +141,7 @@
             if ($redirectInput.length > 0) {
                 // This is a redirect file
                 const redirectUrl = $redirectInput.val();
-                this.saveRedirectFile(fileId, redirectUrl, $toggle.is(':checked'))
+                this.saveRedirectFile(fileId, redirectUrl, mode)
                     .then(() => {
                         // Remove saving state on success
                         $card.removeClass('saving');
@@ -136,7 +158,7 @@
                 const currentContent = $content.val();
                 
                 // Save the content
-                this.saveFileContent(fileId, currentContent, $toggle.is(':checked'), $responseCode.val())
+                this.saveFileContent(fileId, currentContent, mode, $responseCode.val())
                     .then(() => {
                         // Remove saving state on success
                         $card.removeClass('saving');
@@ -150,68 +172,36 @@
             }
         },
 
-        handleToggle(e) {
-            const $toggle = $(e.target);
-            const $card = $toggle.closest('.well-known-file-card');
+        handleModeChange(e) {
+            const $select = $(e.target);
+            const $card = $select.closest('.well-known-file-card');
+            const mode = $select.val();
             const $responseCode = $card.find('.well-known-file-response-code-input');
             const fileId = $card.data('file-id');
-            
-            // Prevent multiple clicks while processing
+
             if ($card.hasClass('saving')) {
                 return;
             }
-            
-            // Add saving state
+
             $card.addClass('saving');
-            $toggle.prop('disabled', true);
-            
-            // Check if this is a redirect file
+            $select.prop('disabled', true);
+            this.applyCardModeUi($card, mode);
+
             const $redirectInput = $card.find('.redirect-url-input');
+            const onComplete = () => {
+                $card.removeClass('saving');
+                $select.prop('disabled', false);
+            };
+
             if ($redirectInput.length > 0) {
-                // This is a redirect file
-                const redirectUrl = $redirectInput.val();
-                
-                if ($toggle.is(':checked')) {
-                    $redirectInput.prop('disabled', false);
-                } else {
-                    $redirectInput.prop('disabled', true);
-                }
-
-                this.saveRedirectFile(fileId, redirectUrl, $toggle.is(':checked'))
-                    .then(() => {
-                        // Remove saving state on success
-                        $card.removeClass('saving');
-                        $toggle.prop('disabled', false);
-                    })
-                    .catch(() => {
-                        // Remove saving state on error
-                        $card.removeClass('saving');
-                        $toggle.prop('disabled', false);
-                    });
+                this.saveRedirectFile(fileId, $redirectInput.val(), mode)
+                    .then(onComplete)
+                    .catch(onComplete);
             } else {
-                // This is a content file
                 const $content = $card.find('.well-known-file-content textarea');
-                const currentContent = $content.val();
-                
-                if ($toggle.is(':checked')) {
-                    $content.prop('disabled', false);
-                } else {
-                    // Disable the textarea
-                    $content.prop('disabled', true);
-                }
-
-                // Save the current content
-                this.saveFileContent(fileId, currentContent, $toggle.is(':checked'), $responseCode.val())
-                    .then(() => {
-                        // Remove saving state on success
-                        $card.removeClass('saving');
-                        $toggle.prop('disabled', false);
-                    })
-                    .catch(() => {
-                        // Remove saving state on error
-                        $card.removeClass('saving');
-                        $toggle.prop('disabled', false);
-                    });
+                this.saveFileContent(fileId, $content.val(), mode, $responseCode.val())
+                    .then(onComplete)
+                    .catch(onComplete);
             }
         },
 
@@ -238,7 +228,7 @@
                 
                 // Save the restored redirect URL
                 console.log('Restoring redirect file:', fileId, 'with URL:', defaultUrl);
-                this.saveRedirectFile(fileId, defaultUrl, true)
+                this.saveRedirectFile(fileId, defaultUrl, 'enabled')
                     .then((response) => {
                         console.log('Redirect file restore success:', response);
                         this.showSaveNotice($card, 'Default redirect URL restored and saved.');
@@ -272,7 +262,7 @@
                             $content.val(response.data.content);
                                 
                             // Save the restored content
-                            this.saveFileContent(fileId, response.data.content, true, response.data.response_code)
+                            this.saveFileContent(fileId, response.data.content, 'enabled', response.data.response_code)
                                 .then(() => {
                                     this.showSaveNotice($card, 'Default content restored and saved.');
                                 })
@@ -295,7 +285,7 @@
             }
         },
 
-        saveRedirectFile(fileId, redirectUrl, enabled) {
+        saveRedirectFile(fileId, redirectUrl, mode) {
             return $.ajax({
                 url: WellKnownFileManager.ajaxurl,
                 type: 'POST',
@@ -304,38 +294,22 @@
                     nonce: WellKnownFileManager.nonce,
                     file: fileId,
                     redirect_url: redirectUrl,
-                    status: enabled
+                    status: mode
                 }
             }).then((response) => {
                 if (response.success) {
                     const $card = $(`.well-known-file-card[data-file-id="${fileId}"]`);
-                    const $toggle = $card.find('.well-known-file-toggle');
-                    const $buttons = $card.find('.button');
-                    
-                    // Update the card's disabled state
-                    if (enabled) {
-                        $card.removeClass('disabled');
-                        $buttons.prop('disabled', false);
-                    } else {
-                        $card.addClass('disabled');
-                        $buttons.prop('disabled', true);
-                    }
-                    
-                    // Show success notification
+                    const savedMode = response.data.mode || mode;
+                    $card.find('.well-known-file-mode').val(savedMode);
+                    this.applyCardModeUi($card, savedMode);
                     this.showSaveNotice($card, response.data.message);
-                    
-                    // Return the response for the calling method to handle
                     return response;
-                } else {
-                    throw new Error(response.data.message);
                 }
+                throw new Error(response.data.message);
             });
         },
 
-        saveFileContent(fileId, content, enabled, responseCode) {
-
-            console.log('Sending nonce:', window.WellKnownFileManager.nonce);
-
+        saveFileContent(fileId, content, mode, responseCode) {
             return $.ajax({
                 url: WellKnownFileManager.ajaxurl,
                 type: 'POST',
@@ -344,27 +318,15 @@
                     nonce: WellKnownFileManager.nonce,
                     file: fileId,
                     content: content,
-                    status: enabled,
+                    status: mode,
                     response_code: responseCode
                 }
             }).then((response) => {
                 if (response.success) {
                     const $card = $(`.well-known-file-card[data-file-id="${fileId}"]`);
-                    const $content = $card.find('.well-known-file-content textarea');
-                    const $toggle = $card.find('.well-known-file-toggle');
-                    const $buttons = $card.find('.button');
-                    
-                    // Update the card's disabled state
-                    if (enabled) {
-                        $card.removeClass('disabled');
-                        $content.prop('disabled', false);
-                        $buttons.prop('disabled', false);
-                    } else {
-                        $card.addClass('disabled');
-                        $content.prop('disabled', true);
-                        $buttons.prop('disabled', true);
-                    }
-                    
+                    const savedMode = response.data.mode || mode;
+                    $card.find('.well-known-file-mode').val(savedMode);
+                    this.applyCardModeUi($card, savedMode);
                     this.showSaveNotice($card, response.data.message);
                 } else {
                     throw new Error(response.data.message);

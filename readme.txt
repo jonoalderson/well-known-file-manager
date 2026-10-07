@@ -22,7 +22,7 @@ Perfect for developers, site owners, and administrators who want a reliable way 
 
 **Key Features:**
 
-* **Easy Management**: Simple toggle switches to enable/disable `.well-known` files
+* **Easy Management**: Per-file modes (disabled, enabled, masked) for each `.well-known` file
 * **Physical File Creation**: Creates actual files in the `.well-known` directory for maximum compatibility
 * **Content Editing**: Built-in content editor for each file type with syntax highlighting
 * **Default Templates**: Pre-configured templates for common `.well-known` files
@@ -93,6 +93,10 @@ Yes! The plugin is designed to work with WordPress caching plugins. Since files 
 3. Priority files highlighted for important security and app association files
 
 == Changelog ==
+
+= 1.5.0 =
+* FEATURE: Per-file modes — disabled (yield URL to other plugins), enabled (serve content), masked (404 via WordPress).
+* BUGFIX: Do not intercept unknown `.well-known` URLs or disabled catalog files, so other plugins can serve them.
 
 = 1.4.9 (26/07/2025) =
 * BUGFIX: Corrected the URL of the Matrix server file (and added support for a separate Matrix client file) (props https://github.com/ZeroEcks).
